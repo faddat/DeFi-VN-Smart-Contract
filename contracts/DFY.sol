@@ -1,6 +1,6 @@
 pragma solidity ^0.7.0;
 
-import "../erc20-token/contracts/ERC20Base.sol";
+import "@vittominacori/erc20-token/contracts/ERC20Base.sol";
 
 contract DFY is ERC20Base {
 
@@ -10,7 +10,6 @@ contract DFY is ERC20Base {
         uint8 decimals,
         uint256 cap,
         uint256 initialSupply,
-        bool transferEnabled,
-        bool mintingFinished
-    ) ERC20Base(name, symbol, decimals, cap, initialSupply, transferEnabled, mintingFinished) {}
+        bool transferEnabled
+    ) ERC20Base(name, symbol, decimals, cap, initialSupply, transferEnabled) {}
 }
