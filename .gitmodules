@@ -1,0 +1,3 @@
+[submodule "erc20-token.git"]
+	path = erc20-token
+	url = https://github.com/defi-vn/erc20-token.git
