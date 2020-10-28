@@ -2067,12 +2067,12 @@ pragma solidity ^0.7.0;
 
 contract DFY is ERC20Base {
 
-    constructor (
-        string memory name,
-        string memory symbol,
-        uint8 decimals,
-        uint256 cap,
-        uint256 initialSupply,
-        bool transferEnabled
-    ) ERC20Base(name, symbol, decimals, cap, initialSupply, transferEnabled) {}
+    constructor () ERC20Base(
+        "DeFi For You", 
+        "#DFY", 
+        18, 
+        1e27, 
+        1e27, 
+        false
+    ) {}
 }
