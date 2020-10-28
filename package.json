@@ -1,0 +1,25 @@
+{
+  "name": "defi-vn-smart-contract",
+  "version": "1.0.0",
+  "description": "The MIT License (MIT)",
+  "main": "truffle",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/defi-vn/DeFi-VN-Smart-Contract.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/defi-vn/DeFi-VN-Smart-Contract/issues"
+  },
+  "homepage": "https://github.com/defi-vn/DeFi-VN-Smart-Contract#readme",
+  "dependencies": {
+    "@vittominacori/erc20-token": "^1.2.3"
+  }
+}
