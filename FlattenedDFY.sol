@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: MIT
+
 // File: node_modules\@openzeppelin\contracts\GSN\Context.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -27,7 +28,6 @@ abstract contract Context {
 
 // File: node_modules\@openzeppelin\contracts\token\ERC20\IERC20.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -107,7 +107,6 @@ interface IERC20 {
 
 // File: node_modules\@openzeppelin\contracts\math\SafeMath.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -269,7 +268,6 @@ library SafeMath {
 
 // File: node_modules\@openzeppelin\contracts\utils\Address.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -413,7 +411,6 @@ library Address {
 
 // File: node_modules\@openzeppelin\contracts\token\ERC20\ERC20.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -722,7 +719,6 @@ contract ERC20 is Context, IERC20 {
 
 // File: @openzeppelin\contracts\token\ERC20\ERC20Capped.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -769,7 +765,6 @@ abstract contract ERC20Capped is ERC20 {
 
 // File: @openzeppelin\contracts\token\ERC20\ERC20Burnable.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -813,7 +808,6 @@ abstract contract ERC20Burnable is Context, ERC20 {
 
 // File: @openzeppelin\contracts\token\ERC20\IERC20.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -893,7 +887,6 @@ interface IERC20 {
 
 // File: @openzeppelin\contracts\introspection\IERC165.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -920,7 +913,6 @@ interface IERC165 {
 
 // File: node_modules\erc-payable-token\contracts\token\ERC1363\IERC1363.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -1013,7 +1005,6 @@ interface IERC1363 is IERC20, IERC165 {
 
 // File: node_modules\erc-payable-token\contracts\token\ERC1363\IERC1363Receiver.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -1049,7 +1040,6 @@ interface IERC1363Receiver {
 
 // File: node_modules\erc-payable-token\contracts\token\ERC1363\IERC1363Spender.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -1084,7 +1074,6 @@ interface IERC1363Spender {
 
 // File: @openzeppelin\contracts\utils\Address.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -1228,7 +1217,6 @@ library Address {
 
 // File: @openzeppelin\contracts\introspection\ERC165Checker.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -1337,7 +1325,6 @@ library ERC165Checker {
 
 // File: @openzeppelin\contracts\token\ERC20\ERC20.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -1646,7 +1633,6 @@ contract ERC20 is Context, IERC20 {
 
 // File: node_modules\@openzeppelin\contracts\introspection\IERC165.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -1673,7 +1659,6 @@ interface IERC165 {
 
 // File: @openzeppelin\contracts\introspection\ERC165.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -1729,7 +1714,6 @@ contract ERC165 is IERC165 {
 
 // File: erc-payable-token\contracts\token\ERC1363\ERC1363.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -1895,7 +1879,6 @@ contract ERC1363 is ERC20, IERC1363, ERC165 {
 
 // File: @openzeppelin\contracts\access\Ownable.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -1965,7 +1948,6 @@ contract Ownable is Context {
 
 // File: eth-token-recover\contracts\TokenRecover.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -1990,7 +1972,6 @@ contract TokenRecover is Ownable {
 
 // File: node_modules\@openzeppelin\contracts\utils\EnumerableSet.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -2236,7 +2217,6 @@ library EnumerableSet {
 
 // File: @openzeppelin\contracts\access\AccessControl.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -2455,7 +2435,6 @@ abstract contract AccessControl is Context {
 
 // File: node_modules\@vittominacori\erc20-token\contracts\access\Roles.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -2484,7 +2463,6 @@ contract Roles is AccessControl {
 
 // File: @vittominacori\erc20-token\contracts\ERC20Base.sol
 
-// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.7.0;
 
@@ -2637,7 +2615,8 @@ contract ERC20Base is ERC20Capped, ERC20Burnable, ERC1363, Roles, TokenRecover {
 
 // File: contracts\DFY.sol
 
-pragma solidity ^0.7.0;
+pragma solidity ^0.7.0;
+
 
 contract DFY is ERC20Base {
 
