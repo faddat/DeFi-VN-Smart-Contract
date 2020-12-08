@@ -1,5 +1,18 @@
 # Smart Contract for DeFi VN
 
+1st - Flatten Solidity source code by Truffle Flattener
+truffle-flattener contracts\DFY.sol > FlattenedDFY2.0.sol
+
+2nd - Fix flattened source code duplicated
+	// SPDX-License-Identifier: MIT
+	// File: @openzeppelin\contracts\token\ERC20\IERC20.sol
+	// File: @openzeppelin\contracts\utils\Address.sol
+	// File: @openzeppelin\contracts\token\ERC20\ERC20.sol
+	// File: node_modules\@openzeppelin\contracts\introspection\IERC165.sol
+	// File: @openzeppelin\contracts\math\SafeMath.sol
+
+Compile with Solidity 0.7.0+commit.9e61f92b
+
 # License
  
 The MIT License (MIT)
