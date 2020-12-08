@@ -13,6 +13,9 @@ truffle-flattener contracts\DFY.sol > FlattenedDFY2.0.sol
 
 Compile with Solidity 0.7.0+commit.9e61f92b
 
+# Smart Contract Deployed
+Testnet: https://testnet.bscscan.com/address/0x4741Ce2aE675357B3A882E9f6d460805Fb618D51
+
 # License
  
 The MIT License (MIT)
