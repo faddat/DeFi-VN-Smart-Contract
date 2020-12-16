@@ -1,0 +1,822 @@
+{
+  "contractName": "TokenRecover",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "tokenAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "tokenAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "recoverERC20",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.7.2+commit.51b20bc0\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokenAmount\",\"type\":\"uint256\"}],\"name\":\"recoverERC20\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"author\":\"Vittorio Minacori (https://github.com/vittominacori)\",\"details\":\"Allow to recover any ERC20 sent into the contract for error\",\"kind\":\"dev\",\"methods\":{\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"recoverERC20(address,uint256)\":{\"details\":\"Remember that only owner can call so be careful when use on contracts generated from other contracts.\",\"params\":{\"tokenAddress\":\"The token contract address\",\"tokenAmount\":\"Number of tokens to be sent\"}},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.\"},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"title\":\"TokenRecover\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"eth-token-recover/contracts/TokenRecover.sol\":\"TokenRecover\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/GSN/Context.sol\":{\"keccak256\":\"0x910a2e625b71168563edf9eeef55a50d6d699acfe27ceba3921f291829a8f938\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://248246ac66e6479dce1ad7d4945ec5540c98ceb09881e93c93f7c48d5772925c\",\"dweb:/ipfs/QmXr8tmUiZgEYid6ixeeBRmTdUnASWjKzhP3KRxMPy8fRt\"]},\"@openzeppelin/contracts/access/Ownable.sol\":{\"keccak256\":\"0x74b0525c81e47810f1bd795755962bdb84de3a4f71cfcb063f4c4d4999a3e96b\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://1cd0b71a794900681c8bcc255599fac53c211fc6a530a58d7dd7246bfde6c4f5\",\"dweb:/ipfs/QmdAB1mFyuN2i25DRf9szWgp1FLCByqJ4F8aYzXWe3mfTR\"]},\"@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"keccak256\":\"0xbd74f587ab9b9711801baf667db1426e4a03fd2d7f15af33e0e0d0394e7cef76\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://2d0913dfbfce90d170df0d496ad7596c0778518e5fa7aba6c32562522546f66b\",\"dweb:/ipfs/QmR6B8nLj2PJf5e1JWD9Nk7ErkAwkqUwadCnvE82FJr1RU\"]},\"eth-token-recover/contracts/TokenRecover.sol\":{\"keccak256\":\"0x21cac11370b63473f1e656810829385167695277c945f599f75e2295a9269ec1\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://a0d7ee54c6e06f5876ba8613a2d488db2a7b871b2bc8c82dd632e707a3754bd1\",\"dweb:/ipfs/Qmdvs2rHXkawFpmsByWteLWorpCy8pHP5esTZtycXPWaik\"]}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b50600061001b61006a565b600080546001600160a01b0319166001600160a01b0383169081178255604051929350917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0908290a35061006e565b3390565b6103f68061007d6000396000f3fe608060405234801561001057600080fd5b506004361061004c5760003560e01c8063715018a6146100515780638980f11f1461005b5780638da5cb5b14610087578063f2fde38b146100ab575b600080fd5b6100596100d1565b005b6100596004803603604081101561007157600080fd5b506001600160a01b038135169060200135610185565b61008f61027d565b604080516001600160a01b039092168252519081900360200190f35b610059600480360360208110156100c157600080fd5b50356001600160a01b031661028c565b6100d9610396565b6000546001600160a01b0390811691161461013b576040805162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b600080546040516001600160a01b03909116907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0908390a3600080546001600160a01b0319169055565b61018d610396565b6000546001600160a01b039081169116146101ef576040805162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b816001600160a01b031663a9059cbb61020661027d565b836040518363ffffffff1660e01b815260040180836001600160a01b0316815260200182815260200192505050602060405180830381600087803b15801561024d57600080fd5b505af1158015610261573d6000803e3d6000fd5b505050506040513d602081101561027757600080fd5b50505050565b6000546001600160a01b031690565b610294610396565b6000546001600160a01b039081169116146102f6576040805162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b6001600160a01b03811661033b5760405162461bcd60e51b815260040180806020018281038252602681526020018061039b6026913960400191505060405180910390fd5b600080546040516001600160a01b03808516939216917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e091a3600080546001600160a01b0319166001600160a01b0392909216919091179055565b339056fe4f776e61626c653a206e6577206f776e657220697320746865207a65726f2061646472657373a2646970667358221220bbeff3ec8bbc29c6f029e35d52fa17f56cfeae3d7079b1da4561488963d8d37e64736f6c63430007020033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061004c5760003560e01c8063715018a6146100515780638980f11f1461005b5780638da5cb5b14610087578063f2fde38b146100ab575b600080fd5b6100596100d1565b005b6100596004803603604081101561007157600080fd5b506001600160a01b038135169060200135610185565b61008f61027d565b604080516001600160a01b039092168252519081900360200190f35b610059600480360360208110156100c157600080fd5b50356001600160a01b031661028c565b6100d9610396565b6000546001600160a01b0390811691161461013b576040805162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b600080546040516001600160a01b03909116907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0908390a3600080546001600160a01b0319169055565b61018d610396565b6000546001600160a01b039081169116146101ef576040805162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b816001600160a01b031663a9059cbb61020661027d565b836040518363ffffffff1660e01b815260040180836001600160a01b0316815260200182815260200192505050602060405180830381600087803b15801561024d57600080fd5b505af1158015610261573d6000803e3d6000fd5b505050506040513d602081101561027757600080fd5b50505050565b6000546001600160a01b031690565b610294610396565b6000546001600160a01b039081169116146102f6576040805162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b6001600160a01b03811661033b5760405162461bcd60e51b815260040180806020018281038252602681526020018061039b6026913960400191505060405180910390fd5b600080546040516001600160a01b03808516939216917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e091a3600080546001600160a01b0319166001600160a01b0392909216919091179055565b339056fe4f776e61626c653a206e6577206f776e657220697320746865207a65726f2061646472657373a2646970667358221220bbeff3ec8bbc29c6f029e35d52fa17f56cfeae3d7079b1da4561488963d8d37e64736f6c63430007020033",
+  "immutableReferences": {},
+  "generatedSources": [],
+  "deployedGeneratedSources": [],
+  "sourceMap": "332:430:22:-:0;;;;;;;;;;;;-1:-1:-1;856:17:4;876:12;:10;:12::i;:::-;898:6;:18;;-1:-1:-1;;;;;;898:18:4;-1:-1:-1;;;;;898:18:4;;;;;;;931:43;;898:18;;-1:-1:-1;898:18:4;931:43;;898:6;;931:43;831:150;332:430:22;;590:104:2;677:10;590:104;:::o;332:430:22:-;;;;;;;",
+  "deployedSourceMap": "332:430:22:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;1680:145:4;;;:::i;:::-;;610:150:22;;;;;;;;;;;;;;;;-1:-1:-1;;;;;;610:150:22;;;;;;;;:::i;1057:77:4:-;;;:::i;:::-;;;;-1:-1:-1;;;;;1057:77:4;;;;;;;;;;;;;;1974:240;;;;;;;;;;;;;;;;-1:-1:-1;1974:240:4;-1:-1:-1;;;;;1974:240:4;;:::i;1680:145::-;1271:12;:10;:12::i;:::-;1261:6;;-1:-1:-1;;;;;1261:6:4;;;:22;;;1253:67;;;;;-1:-1:-1;;;1253:67:4;;;;;;;;;;;;;;;;;;;;;;;;;;;;;1786:1:::1;1770:6:::0;;1749:40:::1;::::0;-1:-1:-1;;;;;1770:6:4;;::::1;::::0;1749:40:::1;::::0;1786:1;;1749:40:::1;1816:1;1799:19:::0;;-1:-1:-1;;;;;;1799:19:4::1;::::0;;1680:145::o;610:150:22:-;1271:12:4;:10;:12::i;:::-;1261:6;;-1:-1:-1;;;;;1261:6:4;;;:22;;;1253:67;;;;;-1:-1:-1;;;1253:67:4;;;;;;;;;;;;;;;;;;;;;;;;;;;;;709:12:22::1;-1:-1:-1::0;;;;;702:29:22::1;;732:7;:5;:7::i;:::-;741:11;702:51;;;;;;;;;;;;;-1:-1:-1::0;;;;;702:51:22::1;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;::::0;::::1;;;;;;;;;;;;::::0;::::1;;;;;;;;;;;;;;;;;;;::::0;::::1;;-1:-1:-1::0;;;;610:150:22:o;1057:77:4:-;1095:7;1121:6;-1:-1:-1;;;;;1121:6:4;1057:77;:::o;1974:240::-;1271:12;:10;:12::i;:::-;1261:6;;-1:-1:-1;;;;;1261:6:4;;;:22;;;1253:67;;;;;-1:-1:-1;;;1253:67:4;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;2062:22:4;::::1;2054:73;;;;-1:-1:-1::0;;;2054:73:4::1;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;2163:6;::::0;;2142:38:::1;::::0;-1:-1:-1;;;;;2142:38:4;;::::1;::::0;2163:6;::::1;::::0;2142:38:::1;::::0;::::1;2190:6;:17:::0;;-1:-1:-1;;;;;;2190:17:4::1;-1:-1:-1::0;;;;;2190:17:4;;;::::1;::::0;;;::::1;::::0;;1974:240::o;590:104:2:-;677:10;590:104;:::o",
+  "source": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.7.0;\n\nimport \"@openzeppelin/contracts/token/ERC20/IERC20.sol\";\nimport \"@openzeppelin/contracts/access/Ownable.sol\";\n\n/**\n * @title TokenRecover\n * @author Vittorio Minacori (https://github.com/vittominacori)\n * @dev Allow to recover any ERC20 sent into the contract for error\n */\ncontract TokenRecover is Ownable {\n\n    /**\n     * @dev Remember that only owner can call so be careful when use on contracts generated from other contracts.\n     * @param tokenAddress The token contract address\n     * @param tokenAmount Number of tokens to be sent\n     */\n    function recoverERC20(address tokenAddress, uint256 tokenAmount) public onlyOwner {\n        IERC20(tokenAddress).transfer(owner(), tokenAmount);\n    }\n}\n",
+  "sourcePath": "eth-token-recover/contracts/TokenRecover.sol",
+  "ast": {
+    "absolutePath": "eth-token-recover/contracts/TokenRecover.sol",
+    "exportedSymbols": {
+      "Context": [
+        371
+      ],
+      "IERC20": [
+        1922
+      ],
+      "Ownable": [
+        763
+      ],
+      "TokenRecover": [
+        3342
+      ]
+    },
+    "id": 3343,
+    "license": "MIT",
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 3316,
+        "literals": [
+          "solidity",
+          "^",
+          "0.7",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "33:23:22"
+      },
+      {
+        "absolutePath": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "file": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "id": 3317,
+        "nodeType": "ImportDirective",
+        "scope": 3343,
+        "sourceUnit": 1923,
+        "src": "58:56:22",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "absolutePath": "@openzeppelin/contracts/access/Ownable.sol",
+        "file": "@openzeppelin/contracts/access/Ownable.sol",
+        "id": 3318,
+        "nodeType": "ImportDirective",
+        "scope": 3343,
+        "sourceUnit": 764,
+        "src": "115:52:22",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "abstract": false,
+        "baseContracts": [
+          {
+            "baseName": {
+              "id": 3320,
+              "name": "Ownable",
+              "nodeType": "UserDefinedTypeName",
+              "referencedDeclaration": 763,
+              "src": "357:7:22",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_Ownable_$763",
+                "typeString": "contract Ownable"
+              }
+            },
+            "id": 3321,
+            "nodeType": "InheritanceSpecifier",
+            "src": "357:7:22"
+          }
+        ],
+        "contractDependencies": [
+          371,
+          763
+        ],
+        "contractKind": "contract",
+        "documentation": {
+          "id": 3319,
+          "nodeType": "StructuredDocumentation",
+          "src": "169:162:22",
+          "text": " @title TokenRecover\n @author Vittorio Minacori (https://github.com/vittominacori)\n @dev Allow to recover any ERC20 sent into the contract for error"
+        },
+        "fullyImplemented": true,
+        "id": 3342,
+        "linearizedBaseContracts": [
+          3342,
+          763,
+          371
+        ],
+        "name": "TokenRecover",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": {
+              "id": 3340,
+              "nodeType": "Block",
+              "src": "692:68:22",
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "arguments": [],
+                        "expression": {
+                          "argumentTypes": [],
+                          "id": 3335,
+                          "name": "owner",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 699,
+                          "src": "732:5:22",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_function_internal_view$__$returns$_t_address_$",
+                            "typeString": "function () view returns (address)"
+                          }
+                        },
+                        "id": 3336,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "kind": "functionCall",
+                        "lValueRequested": false,
+                        "names": [],
+                        "nodeType": "FunctionCall",
+                        "src": "732:7:22",
+                        "tryCall": false,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        }
+                      },
+                      {
+                        "id": 3337,
+                        "name": "tokenAmount",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3326,
+                        "src": "741:11:22",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        },
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      ],
+                      "expression": {
+                        "arguments": [
+                          {
+                            "id": 3332,
+                            "name": "tokenAddress",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 3324,
+                            "src": "709:12:22",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_address",
+                              "typeString": "address"
+                            }
+                          }
+                        ],
+                        "expression": {
+                          "argumentTypes": [
+                            {
+                              "typeIdentifier": "t_address",
+                              "typeString": "address"
+                            }
+                          ],
+                          "id": 3331,
+                          "name": "IERC20",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 1922,
+                          "src": "702:6:22",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_type$_t_contract$_IERC20_$1922_$",
+                            "typeString": "type(contract IERC20)"
+                          }
+                        },
+                        "id": 3333,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "kind": "typeConversion",
+                        "lValueRequested": false,
+                        "names": [],
+                        "nodeType": "FunctionCall",
+                        "src": "702:20:22",
+                        "tryCall": false,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_contract$_IERC20_$1922",
+                          "typeString": "contract IERC20"
+                        }
+                      },
+                      "id": 3334,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": false,
+                      "lValueRequested": false,
+                      "memberName": "transfer",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 1871,
+                      "src": "702:29:22",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_external_nonpayable$_t_address_$_t_uint256_$returns$_t_bool_$",
+                        "typeString": "function (address,uint256) external returns (bool)"
+                      }
+                    },
+                    "id": 3338,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "702:51:22",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "id": 3339,
+                  "nodeType": "ExpressionStatement",
+                  "src": "702:51:22"
+                }
+              ]
+            },
+            "documentation": {
+              "id": 3322,
+              "nodeType": "StructuredDocumentation",
+              "src": "372:233:22",
+              "text": " @dev Remember that only owner can call so be careful when use on contracts generated from other contracts.\n @param tokenAddress The token contract address\n @param tokenAmount Number of tokens to be sent"
+            },
+            "functionSelector": "8980f11f",
+            "id": 3341,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [
+              {
+                "id": 3329,
+                "modifierName": {
+                  "id": 3328,
+                  "name": "onlyOwner",
+                  "nodeType": "Identifier",
+                  "overloadedDeclarations": [],
+                  "referencedDeclaration": 712,
+                  "src": "682:9:22",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_modifier$__$",
+                    "typeString": "modifier ()"
+                  }
+                },
+                "nodeType": "ModifierInvocation",
+                "src": "682:9:22"
+              }
+            ],
+            "name": "recoverERC20",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 3327,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3324,
+                  "mutability": "mutable",
+                  "name": "tokenAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3341,
+                  "src": "632:20:22",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 3323,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "632:7:22",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 3326,
+                  "mutability": "mutable",
+                  "name": "tokenAmount",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3341,
+                  "src": "654:19:22",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3325,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "654:7:22",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "631:43:22"
+            },
+            "returnParameters": {
+              "id": 3330,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "692:0:22"
+            },
+            "scope": 3342,
+            "src": "610:150:22",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "public"
+          }
+        ],
+        "scope": 3343,
+        "src": "332:430:22"
+      }
+    ],
+    "src": "33:730:22"
+  },
+  "legacyAST": {
+    "absolutePath": "eth-token-recover/contracts/TokenRecover.sol",
+    "exportedSymbols": {
+      "Context": [
+        371
+      ],
+      "IERC20": [
+        1922
+      ],
+      "Ownable": [
+        763
+      ],
+      "TokenRecover": [
+        3342
+      ]
+    },
+    "id": 3343,
+    "license": "MIT",
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 3316,
+        "literals": [
+          "solidity",
+          "^",
+          "0.7",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "33:23:22"
+      },
+      {
+        "absolutePath": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "file": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "id": 3317,
+        "nodeType": "ImportDirective",
+        "scope": 3343,
+        "sourceUnit": 1923,
+        "src": "58:56:22",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "absolutePath": "@openzeppelin/contracts/access/Ownable.sol",
+        "file": "@openzeppelin/contracts/access/Ownable.sol",
+        "id": 3318,
+        "nodeType": "ImportDirective",
+        "scope": 3343,
+        "sourceUnit": 764,
+        "src": "115:52:22",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "abstract": false,
+        "baseContracts": [
+          {
+            "baseName": {
+              "id": 3320,
+              "name": "Ownable",
+              "nodeType": "UserDefinedTypeName",
+              "referencedDeclaration": 763,
+              "src": "357:7:22",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_Ownable_$763",
+                "typeString": "contract Ownable"
+              }
+            },
+            "id": 3321,
+            "nodeType": "InheritanceSpecifier",
+            "src": "357:7:22"
+          }
+        ],
+        "contractDependencies": [
+          371,
+          763
+        ],
+        "contractKind": "contract",
+        "documentation": {
+          "id": 3319,
+          "nodeType": "StructuredDocumentation",
+          "src": "169:162:22",
+          "text": " @title TokenRecover\n @author Vittorio Minacori (https://github.com/vittominacori)\n @dev Allow to recover any ERC20 sent into the contract for error"
+        },
+        "fullyImplemented": true,
+        "id": 3342,
+        "linearizedBaseContracts": [
+          3342,
+          763,
+          371
+        ],
+        "name": "TokenRecover",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": {
+              "id": 3340,
+              "nodeType": "Block",
+              "src": "692:68:22",
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "arguments": [],
+                        "expression": {
+                          "argumentTypes": [],
+                          "id": 3335,
+                          "name": "owner",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 699,
+                          "src": "732:5:22",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_function_internal_view$__$returns$_t_address_$",
+                            "typeString": "function () view returns (address)"
+                          }
+                        },
+                        "id": 3336,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "kind": "functionCall",
+                        "lValueRequested": false,
+                        "names": [],
+                        "nodeType": "FunctionCall",
+                        "src": "732:7:22",
+                        "tryCall": false,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        }
+                      },
+                      {
+                        "id": 3337,
+                        "name": "tokenAmount",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3326,
+                        "src": "741:11:22",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        },
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      ],
+                      "expression": {
+                        "arguments": [
+                          {
+                            "id": 3332,
+                            "name": "tokenAddress",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 3324,
+                            "src": "709:12:22",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_address",
+                              "typeString": "address"
+                            }
+                          }
+                        ],
+                        "expression": {
+                          "argumentTypes": [
+                            {
+                              "typeIdentifier": "t_address",
+                              "typeString": "address"
+                            }
+                          ],
+                          "id": 3331,
+                          "name": "IERC20",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 1922,
+                          "src": "702:6:22",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_type$_t_contract$_IERC20_$1922_$",
+                            "typeString": "type(contract IERC20)"
+                          }
+                        },
+                        "id": 3333,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "kind": "typeConversion",
+                        "lValueRequested": false,
+                        "names": [],
+                        "nodeType": "FunctionCall",
+                        "src": "702:20:22",
+                        "tryCall": false,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_contract$_IERC20_$1922",
+                          "typeString": "contract IERC20"
+                        }
+                      },
+                      "id": 3334,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": false,
+                      "lValueRequested": false,
+                      "memberName": "transfer",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 1871,
+                      "src": "702:29:22",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_external_nonpayable$_t_address_$_t_uint256_$returns$_t_bool_$",
+                        "typeString": "function (address,uint256) external returns (bool)"
+                      }
+                    },
+                    "id": 3338,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "702:51:22",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "id": 3339,
+                  "nodeType": "ExpressionStatement",
+                  "src": "702:51:22"
+                }
+              ]
+            },
+            "documentation": {
+              "id": 3322,
+              "nodeType": "StructuredDocumentation",
+              "src": "372:233:22",
+              "text": " @dev Remember that only owner can call so be careful when use on contracts generated from other contracts.\n @param tokenAddress The token contract address\n @param tokenAmount Number of tokens to be sent"
+            },
+            "functionSelector": "8980f11f",
+            "id": 3341,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [
+              {
+                "id": 3329,
+                "modifierName": {
+                  "id": 3328,
+                  "name": "onlyOwner",
+                  "nodeType": "Identifier",
+                  "overloadedDeclarations": [],
+                  "referencedDeclaration": 712,
+                  "src": "682:9:22",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_modifier$__$",
+                    "typeString": "modifier ()"
+                  }
+                },
+                "nodeType": "ModifierInvocation",
+                "src": "682:9:22"
+              }
+            ],
+            "name": "recoverERC20",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 3327,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3324,
+                  "mutability": "mutable",
+                  "name": "tokenAddress",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3341,
+                  "src": "632:20:22",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 3323,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "632:7:22",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 3326,
+                  "mutability": "mutable",
+                  "name": "tokenAmount",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3341,
+                  "src": "654:19:22",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3325,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "654:7:22",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "631:43:22"
+            },
+            "returnParameters": {
+              "id": 3330,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "692:0:22"
+            },
+            "scope": 3342,
+            "src": "610:150:22",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "public"
+          }
+        ],
+        "scope": 3343,
+        "src": "332:430:22"
+      }
+    ],
+    "src": "33:730:22"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.7.2+commit.51b20bc0.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.3.1",
+  "updatedAt": "2020-12-08T15:15:47.408Z",
+  "devdoc": {
+    "author": "Vittorio Minacori (https://github.com/vittominacori)",
+    "details": "Allow to recover any ERC20 sent into the contract for error",
+    "kind": "dev",
+    "methods": {
+      "owner()": {
+        "details": "Returns the address of the current owner."
+      },
+      "recoverERC20(address,uint256)": {
+        "details": "Remember that only owner can call so be careful when use on contracts generated from other contracts.",
+        "params": {
+          "tokenAddress": "The token contract address",
+          "tokenAmount": "Number of tokens to be sent"
+        }
+      },
+      "renounceOwnership()": {
+        "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner."
+      },
+      "transferOwnership(address)": {
+        "details": "Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."
+      }
+    },
+    "title": "TokenRecover",
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  }
+}
