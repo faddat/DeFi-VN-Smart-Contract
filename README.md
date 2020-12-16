@@ -16,6 +16,14 @@ Compile with Solidity 0.7.0+commit.9e61f92b
 # Smart Contract Deployed
 Testnet: https://testnet.bscscan.com/address/0x4741Ce2aE675357B3A882E9f6d460805Fb618D51
 
+# Mirror contract
+1st - Add Minter Role
+2nd - Build contract by truffle
+3rd - Read holders
+4th - Assign Minter
+5th - Create transaction
+6th - Run
+
 # License
  
 The MIT License (MIT)
