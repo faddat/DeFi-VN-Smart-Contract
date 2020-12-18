@@ -15,6 +15,9 @@ Compile with Solidity 0.7.0+commit.9e61f92b
 
 # Smart Contract Deployed
 Testnet: https://testnet.bscscan.com/address/0x4741Ce2aE675357B3A882E9f6d460805Fb618D51
+Mainnet: https://bscscan.com/token/0xD98560689C6e748DC37bc410B4d3096B1aA3D8C2
+Treasure contract address: https://bscscan.com/address/0xbd0c5b8904e8c8b28740642c766ad132f4a9a0a3
+Treasure timelock: 18/12/2020 5:00pm UTC
 
 # Mirror contract
 1st - Add Minter Role
