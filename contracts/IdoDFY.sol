@@ -18,12 +18,12 @@ contract IdoDFY is Ownable {
     mapping(address => mapping(address => bool)) public referrals;
     mapping(address => uint32) public referralsReward;
 
-    enum Stage {OPEN, CLOSE}
+    enum Stage {Unpause, Pause}
 
-    Stage private stage;
+    Stage public stage;
 
     modifier requireOpen {
-        require(stage == Stage.OPEN, "Stage close");
+        require(stage == Stage.Unpause, "Stage close");
         _;
     }
 
@@ -37,9 +37,13 @@ contract IdoDFY is Ownable {
         uint256 time
     );
 
-    constructor(address _DFYToken) public {
+    constructor(address _DFYToken) {
         DFYToken = IERC20(address(_DFYToken));
-        stage = Stage.CLOSE;
+        stage = Stage.Pause;
+    }
+
+    function setStage(Stage _stage) public onlyOwner{
+        stage=_stage;
     }
 
     function updateExchangePair(
@@ -91,7 +95,7 @@ contract IdoDFY is Ownable {
         address token,
         uint256 amount,
         address referral
-    ) external {
+    ) external requireOpen{
         require(exchangePairs[token].status, "Exchange pair is not exist!");
 
         IERC20 transferToken = IERC20(token);

@@ -1,9 +1,9 @@
 require('dotenv').config();
-require("chai/register-should");
+
 const HDWalletProvider = require("@truffle/hdwallet-provider");
 
 const solcStable = {
-  version: "0.7.2",
+  version: "^0.7.0",
   settings: {
     optimizer: {
       enabled: true,
