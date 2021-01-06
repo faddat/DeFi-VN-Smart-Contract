@@ -95,7 +95,7 @@ contract('IdoDFY contract: Buy IDO', function (accounts) {
         await idoDFYContract.setStage(0, { from: owner })
 
         const buyAmount = BigNumber(1*Math.pow(10, ethDecimal))
-        await ETHContact.approve(idoDFYContractAddress, buyAmount, {from: ownerETH})
+        await ETHContract.approve(idoDFYContractAddress, buyAmount, {from: ownerETH})
         await idoDFYContract.buyIdo(ETHContractAddress, buyAmount, address0, {from: ownerETH})
 
         const idoBalance = await DFYContract.balanceOf(ownerETH, { from: ownerETH })
