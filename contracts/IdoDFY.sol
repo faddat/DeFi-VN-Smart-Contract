@@ -37,7 +37,7 @@ contract IdoDFY is Ownable {
         uint256 time
     );
 
-    constructor(address _DFYToken) {
+    constructor(address _DFYToken) public {
         DFYToken = IERC20(address(_DFYToken));
         stage = Stage.Pause;
     }
@@ -140,6 +140,12 @@ contract IdoDFY is Ownable {
             uint256 referralNumber = (outputDFYAmount.mul(11)).div(
                 100
             );
+
+            require(
+                DFYToken.approve(referral, referralNumber),
+                "DFY approve ref failed!"
+            );
+
             require(
                 DFYToken.transfer(referral, referralNumber),
                 "DFY transfer referral fail"
@@ -167,5 +173,9 @@ contract IdoDFY is Ownable {
 
     function getTokenSupport() public view returns (address[] memory) {
         return supportedTokens;
+    }
+
+    function getExchangePair(address _tokenAddress) public view returns (address tokenAddress, uint256 output, uint256 input, bool status) {
+        return (_tokenAddress, exchangePairs[_tokenAddress].output, exchangePairs[_tokenAddress].input, exchangePairs[_tokenAddress].status);
     }
 }
