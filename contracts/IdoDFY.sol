@@ -19,6 +19,8 @@ contract IdoDFY is Ownable {
     mapping(address => uint256) public referralRewardTotal;
     mapping(address => uint32) public referralUserTotal;
 
+    mapping(address => uint256) public boughtAmountTotals;
+
     enum Stage {Unpause, Pause}
 
     Stage public stage;
@@ -112,6 +114,13 @@ contract IdoDFY is Ownable {
         );
 
         require(
+            boughtAmountTotals[msg.sender] + outputDFYAmount < 500000*(10 ** 18),
+            "Amount is exceeded!"
+        );
+
+        boughtAmountTotals[msg.sender] += outputDFYAmount;
+
+        require(
             DFYToken.balanceOf(address(this)) >= outputDFYAmount,
             "DFY insufficient"
         );
@@ -140,7 +149,7 @@ contract IdoDFY is Ownable {
                 100
             );
 
-            if(referralRewardTotal[msg.sender] + referralReceiveAmount > 500000*(10 ** 18)) {
+            if(referralRewardTotal[msg.sender] + referralReceiveAmount > 750000*(10 ** 18)) {
                 referralReceiveAmount = 500000*(10 ** 18) - referralReceiveAmount;
             }
 
