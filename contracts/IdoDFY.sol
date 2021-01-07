@@ -16,7 +16,8 @@ contract IdoDFY is Ownable {
     }
 
     mapping(address => mapping(address => bool)) public referrals;
-    mapping(address => uint32) public referralsReward;
+    mapping(address => uint256) public referralRewardTotal;
+    mapping(address => uint32) public referralUserTotal;
 
     enum Stage {Unpause, Pause}
 
@@ -95,7 +96,7 @@ contract IdoDFY is Ownable {
         address token,
         uint256 amount,
         address referral
-    ) external requireOpen{
+    ) external requireOpen {
         require(exchangePairs[token].status, "Exchange pair is not exist!");
 
         IERC20 transferToken = IERC20(token);
@@ -130,24 +131,34 @@ contract IdoDFY is Ownable {
             "DFY transfer fail"
         );
 
-
+        uint256 referralReceiveAmount = 0;
         if (referral != address(0)
         && referral != msg.sender
-        && referrals[msg.sender][referral]
-        && referralsReward[referral] < 25000
-        ) {
-
-            uint256 referralNumber = (outputDFYAmount.mul(11)).div(
+        && !referrals[msg.sender][referral]
+        && referralUserTotal[msg.sender] < 10) {
+            referralReceiveAmount = (outputDFYAmount.mul(15)).div(
                 100
             );
 
+            if(referralRewardTotal[msg.sender] + referralReceiveAmount > 500000*(10 ** 18)) {
+                referralReceiveAmount = 500000*(10 ** 18) - referralReceiveAmount;
+            }
+
+            referralRewardTotal[msg.sender] += referralReceiveAmount;
+            referralUserTotal[msg.sender] += 1;
+
+            referrals[msg.sender][referral] = true;
+        }
+
+        if (referralReceiveAmount > 0) {
+
             require(
-                DFYToken.approve(referral, referralNumber),
+                DFYToken.approve(referral, referralReceiveAmount),
                 "DFY approve ref failed!"
             );
 
             require(
-                DFYToken.transfer(referral, referralNumber),
+                DFYToken.transfer(referral, referralReceiveAmount),
                 "DFY transfer referral fail"
             );
             emit BuyIDO(
@@ -156,7 +167,7 @@ contract IdoDFY is Ownable {
                 amount,
                 outputDFYAmount,
                 referral,
-                referralNumber,
+                referralReceiveAmount,
                 block.timestamp
             );
         }

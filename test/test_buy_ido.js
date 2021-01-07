@@ -11,6 +11,8 @@ contract('IdoDFY contract: Buy IDO', function (accounts) {
     let ownerETH = accounts[2]
     let DFYContract, DFYContractAddress, idoDFYContract, idoDFYContractAddress
     let ETHContract, ETHContractAddress, BTCContact, BTCContractAddress
+    let user3 = accounts[3]
+    let user4 = accounts[4]
 
     const address0 = "0x0000000000000000000000000000000000000000"
     before("setup", async function () {
@@ -32,9 +34,10 @@ contract('IdoDFY contract: Buy IDO', function (accounts) {
         console.log('\t'+BTCContractAddress)
 
         await DFYContract.enableTransfer({ from: owner })
-        const ownerBalance = await DFYContract.balanceOf(owner, { from: owner })
-        console.log(ownerBalance.toString())
         await DFYContract.transfer(idoDFYContractAddress, BigNumber(50000000*Math.pow(10,18)), { from: owner })
+        await BTCContact.transfer(user3, BigNumber(Math.pow(10,18)), {from: ownerBTC})
+        await ETHContract.transfer(user4, BigNumber(2*Math.pow(10,18)), {from: ownerETH})
+
     });
 
     beforeEach(async function () {
@@ -101,5 +104,46 @@ contract('IdoDFY contract: Buy IDO', function (accounts) {
         const idoBalance = await DFYContract.balanceOf(ownerETH, { from: ownerETH })
         assert.equal(BigNumber(2000*Math.pow(10, 18)).isEqualTo(idoBalance), true, "Buy IDO with ETH success!")
 
+    }).timeout(400000000);
+
+    it("BuyIdo with referal", async () => {
+        await idoDFYContract.updateExchangePair(BTCContractAddress, 170000, 1, {from: owner})
+        await idoDFYContract.updateExchangePair(ETHContractAddress, 2000, 1, {from: owner})
+        const btcDecimal = await BTCContact.decimals()
+
+        await idoDFYContract.setStage(0, { from: owner })
+
+        const buyAmount = BigNumber(0.05*Math.pow(10, btcDecimal))
+        await BTCContact.approve(idoDFYContractAddress, buyAmount, {from: user3})
+        await idoDFYContract.buyIdo(BTCContractAddress, buyAmount, ownerBTC, {from: user3})
+
+        const idoBalance = await DFYContract.balanceOf(user3, { from: user3 })
+        assert.equal(BigNumber(8500*Math.pow(10, 18)).isEqualTo(idoBalance), true, "Buy IDO with BTC and Ref success!")
+
+        const refBalance = await DFYContract.balanceOf(ownerBTC, { from: user3 })
+        assert.equal(BigNumber(18275*Math.pow(10, 18)).isEqualTo(refBalance), true, "Receive Ref success!")
+
+        await BTCContact.approve(idoDFYContractAddress, buyAmount, {from: user3})
+        await idoDFYContract.buyIdo(BTCContractAddress, buyAmount, ownerBTC, {from: user3})
+        const idoBalance2 = await DFYContract.balanceOf(user3, { from: user3 })
+        assert.equal(BigNumber(17000*Math.pow(10, 18)).isEqualTo(idoBalance2), true, "Buy IDO with BTC twice success!")
+
+        const refBalance2 = await DFYContract.balanceOf(ownerBTC, { from: user3 })
+        assert.equal(BigNumber(18275*Math.pow(10, 18)).isEqualTo(refBalance2), true, "Not receive Ref success!")
+    }).timeout(400000000);
+
+    it("BuyIdo with referal itself", async () => {
+        await idoDFYContract.updateExchangePair(BTCContractAddress, 170000, 1, {from: owner})
+        await idoDFYContract.updateExchangePair(ETHContractAddress, 2000, 1, {from: owner})
+        const ethDecimal = await ETHContract.decimals()
+
+        await idoDFYContract.setStage(0, { from: owner })
+
+        const buyAmount = BigNumber(2*Math.pow(10, ethDecimal))
+        await ETHContract.approve(idoDFYContractAddress, buyAmount, {from: user4})
+        await idoDFYContract.buyIdo(ETHContractAddress, buyAmount, user4, {from: user4})
+
+        const idoBalance = await DFYContract.balanceOf(user4, { from: user4 })
+        assert.equal(BigNumber(4000*Math.pow(10, 18)).isEqualTo(idoBalance), true, "Buy IDO with ETH and not have Ref success!")
     }).timeout(400000000);
 });
