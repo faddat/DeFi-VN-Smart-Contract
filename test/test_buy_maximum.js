@@ -68,7 +68,7 @@ contract('IdoDFY contract: Buy IDO Max amount', function (accounts) {
         } catch (e) {
             console.log(e.message)
             assert.equal(e.message,
-                "Returned error: VM Exception while processing transaction: revert Amount is exceeded! -- Reason given: Amount is exceeded!.",
+                "Returned error: VM Exception while processing transaction: revert Request DFI amount is exceeded! -- Reason given: Request DFI amount is exceeded!.",
                 "Buy IDO with BTC fail becase: Amount is exceeded!!"
             )
         }
@@ -89,6 +89,49 @@ contract('IdoDFY contract: Buy IDO Max amount', function (accounts) {
 
         const idoBalance = await DFYContract.balanceOf(ownerBTC, { from: ownerBTC })
         assert.equal(BigNumber(493000*Math.pow(10, 18)).isEqualTo(idoBalance), true, "Buy IDO with BTC success!")
+
+    }).timeout(400000000);
+
+    it("Buy user have more than 750k ref coin", async () => {
+        await idoDFYContract.updateExchangePair(BTCContractAddress, 250000, 1, {from: owner})
+        await idoDFYContract.updateExchangePair(ETHContractAddress, 2000, 1, {from: owner})
+        await idoDFYContract.setStage(0, { from: owner })
+
+        const btcDecimal = await BTCContact.decimals()
+        const buyAmount = BigNumber(2*Math.pow(10, btcDecimal))
+        for(let i = 0; i < 10; i++) {
+            const accountIndex = i + 4
+            await BTCContact.transfer(accounts[accountIndex], buyAmount, {from: ownerBTC})
+
+
+            await BTCContact.approve(idoDFYContractAddress, buyAmount, {from: accounts[accountIndex]})
+            await idoDFYContract.buyIdo(BTCContractAddress, buyAmount, accounts[3], {from: accounts[accountIndex]})
+        }
+
+        const idoBalance = await DFYContract.balanceOf(accounts[3], { from: accounts[3] })
+        assert.equal(BigNumber(750000*Math.pow(10, 18)).isEqualTo(idoBalance), true, "Buy IDO with BTC success!")
+
+    }).timeout(400000000);
+
+    it("Buy user have more than 10 person", async () => {
+        await idoDFYContract.updateExchangePair(BTCContractAddress, 170000, 1, {from: owner})
+        await idoDFYContract.updateExchangePair(ETHContractAddress, 2000, 1, {from: owner})
+        await idoDFYContract.setStage(0, { from: owner })
+
+        const btcDecimal = await BTCContact.decimals()
+        const buyAmount = BigNumber(Math.pow(10, btcDecimal))
+        for(let i = 0; i < 12; i++) {
+            const accountIndex = i + 15
+            await BTCContact.transfer(accounts[accountIndex], buyAmount, {from: ownerBTC})
+
+
+            await BTCContact.approve(idoDFYContractAddress, buyAmount, {from: accounts[accountIndex]})
+            await idoDFYContract.buyIdo(BTCContractAddress, buyAmount, accounts[14], {from: accounts[accountIndex]})
+
+        }
+
+        const idoBalance = await DFYContract.balanceOf(accounts[14], { from: accounts[14] })
+        assert.equal(BigNumber(255000*Math.pow(10, 18)).isEqualTo(idoBalance), true, "Buy IDO with BTC success!")
 
     }).timeout(400000000);
 

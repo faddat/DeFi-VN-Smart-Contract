@@ -15,9 +15,9 @@ contract IdoDFY is Ownable {
         bool status;
     }
 
-    mapping(address => mapping(address => bool)) public referrals;
+    mapping(address => address) public beReferred;
     mapping(address => uint256) public referralRewardTotal;
-    mapping(address => uint32) public referralUserTotal;
+    mapping(address => uint8) public referralUserTotal;
 
     mapping(address => uint256) public boughtAmountTotals;
 
@@ -114,8 +114,8 @@ contract IdoDFY is Ownable {
         );
 
         require(
-            boughtAmountTotals[msg.sender] + outputDFYAmount < 500000*(10 ** 18),
-            "Amount is exceeded!"
+            boughtAmountTotals[msg.sender] + outputDFYAmount <= 500000*(10 ** 18),
+            "Request DFI amount is exceeded!"
         );
 
         boughtAmountTotals[msg.sender] += outputDFYAmount;
@@ -143,23 +143,26 @@ contract IdoDFY is Ownable {
         uint256 referralReceiveAmount = 0;
         if (referral != address(0)
         && referral != msg.sender
-        && !referrals[msg.sender][referral]
-        && referralUserTotal[msg.sender] < 10) {
-            referralReceiveAmount = (outputDFYAmount.mul(15)).div(
+        && beReferred[msg.sender] == address(0)
+        && referralUserTotal[referral] < 10) {
+            uint256 expectedReferralReceiveAmount = (outputDFYAmount.mul(15)).div(
                 100
             );
 
-            if(referralRewardTotal[msg.sender] + referralReceiveAmount > 750000*(10 ** 18)) {
-                referralReceiveAmount = 500000*(10 ** 18) - referralReceiveAmount;
+            if(referralRewardTotal[referral] + expectedReferralReceiveAmount <= 750000*(10 ** 18)) {
+                referralReceiveAmount = expectedReferralReceiveAmount;
+            } else {
+                referralReceiveAmount = 750000*(10 ** 18) - referralRewardTotal[referral];
             }
 
-            referralRewardTotal[msg.sender] += referralReceiveAmount;
-            referralUserTotal[msg.sender] += 1;
-
-            referrals[msg.sender][referral] = true;
         }
 
         if (referralReceiveAmount > 0) {
+
+            referralRewardTotal[referral] += referralReceiveAmount;
+            referralUserTotal[referral] += 1;
+
+            beReferred[msg.sender] = referral;
 
             require(
                 DFYToken.approve(referral, referralReceiveAmount),
