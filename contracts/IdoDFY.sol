@@ -6,6 +6,26 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract IdoDFY is Ownable {
+    constructor(
+        address _DFYToken,
+        uint256 _buyMaximum,
+        uint256 _maxPersonRef,
+        uint256 _maxRewardFromRef,
+        uint256 _refRewardPercent
+    ) public {
+        DFYToken = IERC20(address(_DFYToken));
+        stage = Stage.Pause;
+        buyMaximum = _buyMaximum;
+        maxPersonRef = _maxPersonRef;
+        maxRewardFromRef = _maxRewardFromRef;
+        refRewardPercent = _refRewardPercent;
+    }
+
+    uint256 buyMaximum;
+    uint256 refRewardPercent;
+    uint256 maxPersonRef;
+    uint256 maxRewardFromRef;
+
     using SafeMath for uint256;
     IERC20 private DFYToken;
 
@@ -39,11 +59,6 @@ contract IdoDFY is Ownable {
         uint256 output,
         uint256 time
     );
-
-    constructor(address _DFYToken) public {
-        DFYToken = IERC20(address(_DFYToken));
-        stage = Stage.Pause;
-    }
 
     function setStage(Stage _stage) public onlyOwner{
         stage=_stage;
@@ -114,7 +129,7 @@ contract IdoDFY is Ownable {
         );
 
         require(
-            boughtAmountTotals[msg.sender] + outputDFYAmount <= 500000*(10 ** 18),
+            boughtAmountTotals[msg.sender] + outputDFYAmount <= buyMaximum*(10 ** 18),
             "Request DFI amount is exceeded!"
         );
 
@@ -144,15 +159,15 @@ contract IdoDFY is Ownable {
         if (referral != address(0)
         && referral != msg.sender
         && beReferred[msg.sender] == address(0)
-        && referralUserTotal[referral] < 10) {
-            uint256 expectedReferralReceiveAmount = (outputDFYAmount.mul(15)).div(
+        && referralUserTotal[referral] < maxPersonRef) {
+            uint256 expectedReferralReceiveAmount = (outputDFYAmount.mul(refRewardPercent)).div(
                 100
             );
 
-            if(referralRewardTotal[referral] + expectedReferralReceiveAmount <= 750000*(10 ** 18)) {
+            if(referralRewardTotal[referral] + expectedReferralReceiveAmount <= maxRewardFromRef*(10 ** 18)) {
                 referralReceiveAmount = expectedReferralReceiveAmount;
             } else {
-                referralReceiveAmount = 750000*(10 ** 18) - referralRewardTotal[referral];
+                referralReceiveAmount = maxRewardFromRef*(10 ** 18) - referralRewardTotal[referral];
             }
 
         }

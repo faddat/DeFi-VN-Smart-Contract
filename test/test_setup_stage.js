@@ -34,7 +34,7 @@ contract('IdoDFY contract: Setup stage', function (accounts) {
         const DFYContracyAddress=DFYContracy.address
         console.log('\t'+DFYContracyAddress)
 
-        const idoDFYContracy = await IdoDFY.new(DFYContracy.address,{ from: owner })
+        const idoDFYContracy = await IdoDFY.new(DFYContracy.address, 500000, 10, 750000, 15,{ from: owner })
         const idoDFYContracyAddress=idoDFYContracy.address
         console.log('\t'+idoDFYContracyAddress)
 

@@ -19,7 +19,7 @@ contract('IdoDFY contract: Buy IDO Max amount', function (accounts) {
         DFYContractAddress = DFYContract.address
         console.log('\t' + DFYContractAddress)
 
-        idoDFYContract = await IdoDFY.new(DFYContract.address, {from: owner})
+        idoDFYContract = await IdoDFY.new(DFYContract.address, 500000, 10, 750000, 15,{ from: owner })
         idoDFYContractAddress = idoDFYContract.address
         console.log('\t' + idoDFYContractAddress)
 
