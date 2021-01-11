@@ -34,7 +34,12 @@ contract('IdoDFY contract: Setup stage', function (accounts) {
         const DFYContracyAddress=DFYContracy.address
         console.log('\t'+DFYContracyAddress)
 
-        const idoDFYContracy = await IdoDFY.new(DFYContracy.address, 500000, 10, 750000, 15,{ from: owner })
+        const currentTime = Math.floor(new Date().getTime()/1000)
+        const nextDayDate = new Date()
+        nextDayDate.setDate(nextDayDate.getDate() + 1);
+        const nextDayTime = Math.floor(nextDayDate.getTime()/1000)
+
+        const idoDFYContracy = await IdoDFY.new(DFYContracy.address, 500000, 10, 750000, 15, currentTime, nextDayTime, { from: owner })
         const idoDFYContracyAddress=idoDFYContracy.address
         console.log('\t'+idoDFYContracyAddress)
 
@@ -45,6 +50,8 @@ contract('IdoDFY contract: Setup stage', function (accounts) {
         assert.equal(idoBalance, 350000000, "idoDFY balance inconrrect")
 
         console.log('\tsetup stage to unpaused')
+
+        await idoDFYContracy.setStage(1, { from: owner })
         let stage = await idoDFYContracy.stage( { from: owner });
         assert.equal(stage, 1, "idoDFY stage inconrrect")
 

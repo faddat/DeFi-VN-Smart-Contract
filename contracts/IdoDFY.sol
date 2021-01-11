@@ -11,20 +11,26 @@ contract IdoDFY is Ownable {
         uint256 _buyMaximum,
         uint256 _maxPersonRef,
         uint256 _maxRewardFromRef,
-        uint256 _refRewardPercent
+        uint256 _refRewardPercent,
+        uint _start,
+        uint _end
     ) public {
         DFYToken = IERC20(address(_DFYToken));
-        stage = Stage.Pause;
+        stage = Stage.Unpause;
         buyMaximum = _buyMaximum;
         maxPersonRef = _maxPersonRef;
         maxRewardFromRef = _maxRewardFromRef;
         refRewardPercent = _refRewardPercent;
+        start = _start;
+        end = _end;
     }
 
     uint256 buyMaximum;
     uint256 refRewardPercent;
     uint256 maxPersonRef;
     uint256 maxRewardFromRef;
+    uint start;
+    uint end;
 
     using SafeMath for uint256;
     IERC20 private DFYToken;
@@ -47,6 +53,8 @@ contract IdoDFY is Ownable {
 
     modifier requireOpen {
         require(stage == Stage.Unpause, "Stage close");
+        require(block.timestamp >= start, "IDO time is not started");
+        require(block.timestamp <= end, "IDO time was end");
         _;
     }
 

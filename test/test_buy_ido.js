@@ -20,8 +20,11 @@ contract('IdoDFY contract: Buy IDO', function (accounts) {
         DFYContract = await DFY.new( { from: owner })
         DFYContractAddress=DFYContract.address
         console.log('\t'+DFYContractAddress)
-
-        idoDFYContract = await IdoDFY.new(DFYContract.address, 500000, 10, 750000, 15,{ from: owner })
+        const currentTime = Math.floor(new Date().getTime()/1000)
+        const nextDayDate = new Date()
+        nextDayDate.setDate(nextDayDate.getDate() + 1);
+        const nextDayTime = Math.floor(nextDayDate.getTime()/1000)
+        idoDFYContract = await IdoDFY.new(DFYContract.address, 500000, 10, 750000, 15, currentTime, nextDayTime,{ from: owner })
         idoDFYContractAddress=idoDFYContract.address
         console.log('\t'+idoDFYContractAddress)
 
