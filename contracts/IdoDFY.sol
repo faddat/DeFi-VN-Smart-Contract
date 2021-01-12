@@ -25,12 +25,12 @@ contract IdoDFY is Ownable {
         end = _end;
     }
 
-    uint256 buyMaximum;
-    uint256 refRewardPercent;
-    uint256 maxPersonRef;
-    uint256 maxRewardFromRef;
-    uint start;
-    uint end;
+    uint256 public buyMaximum;
+    uint256 public refRewardPercent;
+    uint256 public maxPersonRef;
+    uint256 public maxRewardFromRef;
+    uint public start;
+    uint public end;
 
     using SafeMath for uint256;
     IERC20 private DFYToken;
@@ -69,7 +69,7 @@ contract IdoDFY is Ownable {
     );
 
     function setStage(Stage _stage) public onlyOwner{
-        stage=_stage;
+        stage = _stage;
     }
 
     function updateExchangePair(
