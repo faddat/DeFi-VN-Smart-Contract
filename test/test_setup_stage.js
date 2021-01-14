@@ -39,7 +39,7 @@ contract('IdoDFY contract: Setup stage', function (accounts) {
         nextDayDate.setDate(nextDayDate.getDate() + 1);
         const nextDayTime = Math.floor(nextDayDate.getTime()/1000)
 
-        const idoDFYContracy = await IdoDFY.new(DFYContracy.address, 500000, 10, 750000, 15, currentTime, nextDayTime, { from: owner })
+        const idoDFYContracy = await IdoDFY.new(DFYContracy.address, 1000, 500000, 10, 750000, 15, currentTime, nextDayTime, { from: owner })
         const idoDFYContracyAddress=idoDFYContracy.address
         console.log('\t'+idoDFYContracyAddress)
 

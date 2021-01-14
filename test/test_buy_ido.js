@@ -24,7 +24,7 @@ contract('IdoDFY contract: Buy IDO', function (accounts) {
         const nextDayDate = new Date()
         nextDayDate.setDate(nextDayDate.getDate() + 1);
         const nextDayTime = Math.floor(nextDayDate.getTime()/1000)
-        idoDFYContract = await IdoDFY.new(DFYContract.address, 500000, 10, 750000, 15, currentTime, nextDayTime,{ from: owner })
+        idoDFYContract = await IdoDFY.new(DFYContract.address, 1000, 500000, 10, 750000, 15, currentTime, nextDayTime,{ from: owner })
         idoDFYContractAddress=idoDFYContract.address
         console.log('\t'+idoDFYContractAddress)
 
@@ -149,4 +149,34 @@ contract('IdoDFY contract: Buy IDO', function (accounts) {
         const idoBalance = await DFYContract.balanceOf(user4, { from: user4 })
         assert.equal(BigNumber(4000*Math.pow(10, 18)).isEqualTo(idoBalance), true, "Buy IDO with ETH and not have Ref success!")
     }).timeout(400000000);
+
+    it("Buy Ido failed because lower than 1000 DFY", async () => {
+        await idoDFYContract.updateExchangePair(BTCContractAddress, 170000, 1, {from: owner})
+        await idoDFYContract.setStage(0, { from: owner })
+
+        const buyAmount = BigNumber(0.005*Math.pow(10, 18))
+        await BTCContact.approve(idoDFYContractAddress, buyAmount, {from: ownerBTC})
+
+        try {
+            await idoDFYContract.buyIdo(BTCContractAddress, buyAmount, address0, {from: ownerBTC})
+        } catch (e) {
+            assert.equal(e.message,
+                "Returned error: VM Exception while processing transaction: revert Amount DFI request is too low -- Reason given: Amount DFI request is too low.",
+                "Buy IDO with BTC fail because: Buy too low"
+            )
+        }
+    })
+
+    it("Buy Ido success when buy 1000 DFY", async () => {
+        await idoDFYContract.updateExchangePair(ETHContractAddress, 2000, 1, {from: owner})
+        await idoDFYContract.setStage(0, { from: owner })
+
+        const buyAmount = BigNumber(0.5*Math.pow(10, 18))
+        await ETHContract.approve(idoDFYContractAddress, buyAmount, {from: ownerETH})
+
+        await idoDFYContract.buyIdo(ETHContractAddress, buyAmount, address0, {from: ownerETH})
+        const ownerETHBalance = await DFYContract.balanceOf(ownerETH, { from: ownerETH })
+        assert.equal(ownerETHBalance.toString(), "3000000000000000000000", "Buy IDO with exact 1000 DFY success")
+
+    })
 });

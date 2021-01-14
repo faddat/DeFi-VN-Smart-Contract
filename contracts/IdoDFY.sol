@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract IdoDFY is Ownable {
     constructor(
         address _DFYToken,
+        uint256 _buyMinimum,
         uint256 _buyMaximum,
         uint256 _maxPersonRef,
         uint256 _maxRewardFromRef,
@@ -17,6 +18,7 @@ contract IdoDFY is Ownable {
     ) public {
         DFYToken = IERC20(address(_DFYToken));
         stage = Stage.Unpause;
+        buyMinimum = _buyMinimum;
         buyMaximum = _buyMaximum;
         maxPersonRef = _maxPersonRef;
         maxRewardFromRef = _maxRewardFromRef;
@@ -25,6 +27,7 @@ contract IdoDFY is Ownable {
         end = _end;
     }
 
+    uint256 public buyMinimum;
     uint256 public buyMaximum;
     uint256 public refRewardPercent;
     uint256 public maxPersonRef;
@@ -134,6 +137,11 @@ contract IdoDFY is Ownable {
         uint256 outputDFYAmount =
         (exchangePairs[token].output.mul(amount)).div(
             exchangePairs[token].input
+        );
+
+        require(
+            outputDFYAmount >= buyMinimum*(10 ** 18),
+            "Amount DFI request is too low"
         );
 
         require(

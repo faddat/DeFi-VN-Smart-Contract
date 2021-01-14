@@ -24,7 +24,7 @@ contract('IdoDFY contract: Buy IDO Max amount', function (accounts) {
         nextDayDate.setDate(nextDayDate.getDate() + 1);
         const nextDayTime = Math.floor(nextDayDate.getTime()/1000)
 
-        idoDFYContract = await IdoDFY.new(DFYContract.address, 500000, 10, 750000, 15, currentTime, nextDayTime,{ from: owner })
+        idoDFYContract = await IdoDFY.new(DFYContract.address, 1000, 500000, 10, 750000, 15, currentTime, nextDayTime,{ from: owner })
         idoDFYContractAddress = idoDFYContract.address
         console.log('\t' + idoDFYContractAddress)
 

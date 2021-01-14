@@ -37,7 +37,7 @@ contract('IdoDFY contract: Setting buying time', function (accounts) {
         const next2DayDate = new Date()
         next2DayDate.setDate(next2DayDate.getDate() + 2);
         const next2DayTime = Math.floor(next2DayDate.getTime()/1000)
-        idoDFYContract = await IdoDFY.new(DFYContract.address, 500000, 10, 750000, 15, nextDayTime, next2DayTime,{ from: owner })
+        idoDFYContract = await IdoDFY.new(DFYContract.address, 1000, 500000, 10, 750000, 15, nextDayTime, next2DayTime,{ from: owner })
         idoDFYContractAddress = idoDFYContract.address
 
         await DFYContract.enableTransfer({from: owner})
@@ -64,7 +64,7 @@ contract('IdoDFY contract: Setting buying time', function (accounts) {
         const oneDayBeforeDate = new Date()
         oneDayBeforeDate.setDate(oneDayBeforeDate.getDate() - 1)
         const oneDayBeforeTime = Math.floor(oneDayBeforeDate.getTime()/1000)
-        idoDFYContract = await IdoDFY.new(DFYContract.address, 500000, 10, 750000, 15, twoDayBeforeTime, oneDayBeforeTime,{ from: owner })
+        idoDFYContract = await IdoDFY.new(DFYContract.address, 1000, 500000, 10, 750000, 15, twoDayBeforeTime, oneDayBeforeTime,{ from: owner })
         idoDFYContractAddress = idoDFYContract.address
 
         await DFYContract.enableTransfer({from: owner})
