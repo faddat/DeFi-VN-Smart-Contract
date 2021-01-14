@@ -1,6 +1,6 @@
 pragma solidity ^0.7.0;
 
-import "@openzeppelin/contracts/token/TokenTimelock.sol";
+import "@openzeppelin/contracts/token/ERC20/TokenTimelock.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract DFYTreasure is TokenTimelock {

@@ -224,4 +224,35 @@ contract IdoDFY is Ownable {
     function getExchangePair(address _tokenAddress) public view returns (address tokenAddress, uint256 output, uint256 input, bool status) {
         return (_tokenAddress, exchangePairs[_tokenAddress].output, exchangePairs[_tokenAddress].input, exchangePairs[_tokenAddress].status);
     }
+
+    event WithdrawnToken(
+        address token,
+        uint256 amount,
+        address receiveAddress
+    );
+
+    function withdrawnToken(address _tokenAddress, uint256 amount) external onlyOwner {
+        IERC20 transferToken = IERC20(_tokenAddress);
+        require(
+            transferToken.balanceOf(address(this)) >= amount,
+            "Token insufficient"
+        );
+
+        require(
+            transferToken.approve(owner(), amount),
+            "Token approve failed!"
+        );
+
+        require(
+            transferToken.transfer(owner(), amount),
+            "Token transfer fail"
+        );
+
+        emit WithdrawnToken(
+            _tokenAddress,
+            amount,
+            owner()
+        );
+    }
+
 }
