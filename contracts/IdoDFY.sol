@@ -25,6 +25,7 @@ contract IdoDFY is Ownable {
         refRewardPercent = _refRewardPercent;
         start = _start;
         end = _end;
+        isPublic = false;
     }
 
     uint256 public buyMinimum;
@@ -54,10 +55,16 @@ contract IdoDFY is Ownable {
 
     Stage public stage;
 
+    mapping(address => bool) public whitelist;
+    bool isPublic;
+
     modifier requireOpen {
         require(stage == Stage.Unpause, "Stage close");
         require(block.timestamp >= start, "IDO time is not started");
         require(block.timestamp <= end, "IDO time was end");
+
+        require(isPublic || whitelist[msg.sender], "Public sale still not open");
+
         _;
     }
 
@@ -73,6 +80,14 @@ contract IdoDFY is Ownable {
 
     function setStage(Stage _stage) public onlyOwner{
         stage = _stage;
+    }
+
+    function setPublic(bool _isPublic) public onlyOwner {
+        isPublic = _isPublic;
+    }
+
+    function addWhiteList(address _whitelist) public onlyOwner {
+        whitelist[_whitelist] = true;
     }
 
     function updateExchangePair(

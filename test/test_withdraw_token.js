@@ -28,6 +28,7 @@ contract('IdoDFY contract: Withdraw token', function (accounts) {
         idoDFYContractAddress=idoDFYContract.address
 
         await DFYContract.enableTransfer({ from: owner })
+        await idoDFYContract.setPublic(true, { from: owner })
 
         await DFYContract.transfer(idoDFYContractAddress, BigNumber(50000000*Math.pow(10,18)), { from: owner })
 
@@ -50,6 +51,7 @@ contract('IdoDFY contract: Withdraw token', function (accounts) {
         const nextDayTime = Math.floor(nextDayDate.getTime()/1000)
         idoDFYContract = await IdoDFY.new(DFYContract.address, 1000, 500000, 10, 750000, 15, currentTime, nextDayTime,{ from: owner })
         idoDFYContractAddress=idoDFYContract.address
+        await idoDFYContract.setPublic(true, { from: owner })
 
         await DFYContract.enableTransfer({ from: owner })
 

@@ -42,6 +42,7 @@ contract('IdoDFY contract: Setting buying time', function (accounts) {
 
         await DFYContract.enableTransfer({from: owner})
         await DFYContract.transfer(idoDFYContractAddress, BigNumber(100000000 * Math.pow(10, 18)), {from: owner})
+        await idoDFYContract.setPublic(true, { from: owner })
 
         await idoDFYContract.updateExchangePair( BTCContractAddress, 170000, 1, {from: owner})
 
@@ -69,6 +70,7 @@ contract('IdoDFY contract: Setting buying time', function (accounts) {
 
         await DFYContract.enableTransfer({from: owner})
         await DFYContract.transfer(idoDFYContractAddress, BigNumber(100000000 * Math.pow(10, 18)), {from: owner})
+        await idoDFYContract.setPublic(true, { from: owner })
 
         await idoDFYContract.updateExchangePair( BTCContractAddress, 170000, 1, {from: owner})
 

@@ -37,6 +37,7 @@ contract('IdoDFY contract: Buy IDO', function (accounts) {
         console.log('\t'+BTCContractAddress)
 
         await DFYContract.enableTransfer({ from: owner })
+        await idoDFYContract.setPublic(true, { from: owner })
         await DFYContract.transfer(idoDFYContractAddress, BigNumber(50000000*Math.pow(10,18)), { from: owner })
         await BTCContact.transfer(user3, BigNumber(Math.pow(10,18)), {from: ownerBTC})
         await ETHContract.transfer(user4, BigNumber(2*Math.pow(10,18)), {from: ownerETH})

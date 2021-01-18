@@ -35,6 +35,7 @@ contract('IdoDFY contract: Buy IDO Max amount', function (accounts) {
         BTCContact = await ERC20CustomToken.new("Bitcoin", "BTC", {from: ownerBTC})
         BTCContractAddress = BTCContact.address
         console.log('\t' + BTCContractAddress)
+        await idoDFYContract.setPublic(true, { from: owner })
 
         await DFYContract.enableTransfer({from: owner})
         await DFYContract.transfer(idoDFYContractAddress, BigNumber(170000000 * Math.pow(10, 18)), {from: owner})
