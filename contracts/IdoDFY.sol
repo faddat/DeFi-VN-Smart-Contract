@@ -156,12 +156,12 @@ contract IdoDFY is Ownable {
 
         require(
             outputDFYAmount >= buyMinimum*(10 ** 18),
-            "Amount DFI request is too low"
+            "Amount DFY request is too low"
         );
 
         require(
             boughtAmountTotals[msg.sender] + outputDFYAmount <= buyMaximum*(10 ** 18),
-            "Request DFI amount is exceeded!"
+            "Request DFY amount is exceeded!"
         );
 
         boughtAmountTotals[msg.sender] += outputDFYAmount;
