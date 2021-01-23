@@ -95,7 +95,7 @@ contract IdoDFY is Ownable {
         uint256 output,
         uint256 input
     ) public onlyOwner {
-        require(token != address(0), "Token invalid");
+        // require(token != address(0), "Token invalid"); address(0) for BNB 
         if (!exchangePairs[token].status) {
             supportedTokens.push(token);
         }
@@ -135,20 +135,34 @@ contract IdoDFY is Ownable {
         uint256 time
     );
 
+
+
+    function _transferBNBToOwner(uint256 amount) internal{
+        // address payable payableAddress = address(uint160(from));
+        // msg.sender.transfer(amount);
+    }
+
+    function _transferDFy(uint256 amount) internal{
+        require(
+            DFYToken.approve(msg.sender, amount),
+            "DFY approve failed!"
+        );
+
+        require(
+            DFYToken.transfer(msg.sender, amount),
+            "DFY transfer fail"
+        );
+    }
+
     function buyIdo(
         address token,
         uint256 amount,
         address referral
-    ) external requireOpen {
+    ) external requireOpen payable{
         require(exchangePairs[token].status, "Exchange pair is not exist!");
-
-        IERC20 transferToken = IERC20(token);
-
-        require(
-            transferToken.balanceOf(msg.sender) >= amount,
-            "Token insufficient"
-        );
-
+        if(token==address(0)){
+            amount=msg.value;
+        }
         uint256 outputDFYAmount =
         (exchangePairs[token].output.mul(amount)).div(
             exchangePairs[token].input
@@ -171,40 +185,21 @@ contract IdoDFY is Ownable {
             "DFY insufficient"
         );
 
-        require(
-            transferToken.transferFrom(msg.sender, owner(), amount),
-            "Token transfer fail"
-        );
+        if(token!=address(0)){
+            _transferTokenToOwner(token, amount);
+        }    
 
-        require(
-            DFYToken.approve(msg.sender, outputDFYAmount),
-            "DFY approve failed!"
-        );
-
-        require(
-            DFYToken.transfer(msg.sender, outputDFYAmount),
-            "DFY transfer fail"
-        );
+        _transferDFy(outputDFYAmount); 
 
         uint256 referralReceiveAmount = 0;
         if (referral != address(0)
         && referral != msg.sender
         && beReferred[msg.sender] == address(0)
         && referralUserTotal[referral] < maxPersonRef) {
-            uint256 expectedReferralReceiveAmount = (outputDFYAmount.mul(refRewardPercent)).div(
-                100
-            );
-
-            if(referralRewardTotal[referral] + expectedReferralReceiveAmount <= maxRewardFromRef*(10 ** 18)) {
-                referralReceiveAmount = expectedReferralReceiveAmount;
-            } else {
-                referralReceiveAmount = maxRewardFromRef*(10 ** 18) - referralRewardTotal[referral];
-            }
-
+            referralReceiveAmount=_calculateReferal(referral, outputDFYAmount);
         }
 
         if (referralReceiveAmount > 0) {
-
             referralRewardTotal[referral] += referralReceiveAmount;
             referralUserTotal[referral] += 1;
 
@@ -240,12 +235,47 @@ contract IdoDFY is Ownable {
         );
     }
 
+    function _transferTokenToOwner(address token, uint256 amount) internal {
+        IERC20 transferToken = IERC20(token);
+
+        require(
+            transferToken.balanceOf(msg.sender) >= amount,
+            "Token insufficient"
+        );
+
+        require(
+            transferToken.transferFrom(msg.sender, owner(), amount),
+            "Token transfer fail"
+        );
+    }
+
+    function _calculateReferal(address referral, uint256 amount) internal view returns (uint256){
+        uint256 referralReceiveAmount = 0;
+        uint256 expectedReferralReceiveAmount = (amount.mul(refRewardPercent)).div(
+                100
+            );
+
+        if(referralRewardTotal[referral] + expectedReferralReceiveAmount <= maxRewardFromRef*(10 ** 18)) {
+            referralReceiveAmount = expectedReferralReceiveAmount;
+        } else {
+            referralReceiveAmount = maxRewardFromRef*(10 ** 18) - referralRewardTotal[referral];
+        }
+
+        return referralReceiveAmount;
+    }
+
     function getTokenSupport() public view returns (address[] memory) {
         return supportedTokens;
     }
 
     function getExchangePair(address _tokenAddress) public view returns (address tokenAddress, uint256 output, uint256 input, bool status) {
         return (_tokenAddress, exchangePairs[_tokenAddress].output, exchangePairs[_tokenAddress].input, exchangePairs[_tokenAddress].status);
+    }
+
+    function withdrawnBNB() external onlyOwner{
+        address owner=owner();
+        address payable ownerPayable = address(uint160(owner));
+        ownerPayable.transfer(address(this).balance);
     }
 
     event WithdrawnToken(
