@@ -56,7 +56,7 @@ contract IdoDFY is Ownable {
     Stage public stage;
 
     mapping(address => bool) public whitelist;
-    bool isPublic;
+    bool public isPublic;
 
     modifier requireOpen {
         require(stage == Stage.Unpause, "Stage close");
