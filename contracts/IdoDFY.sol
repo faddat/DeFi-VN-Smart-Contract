@@ -56,7 +56,7 @@ contract IdoDFY is Ownable {
     Stage public stage;
 
     mapping(address => bool) public whitelist;
-    bool isPublic;
+    bool public isPublic;
 
     modifier requireOpen {
         require(stage == Stage.Unpause, "Stage close");
@@ -95,7 +95,7 @@ contract IdoDFY is Ownable {
         uint256 output,
         uint256 input
     ) public onlyOwner {
-        // require(token != address(0), "Token invalid"); address(0) for BNB 
+        // require(token != address(0), "Token invalid"); address(0) for BNB
         if (!exchangePairs[token].status) {
             supportedTokens.push(token);
         }
@@ -137,9 +137,10 @@ contract IdoDFY is Ownable {
 
 
 
-    function _transferBNBToOwner(uint256 amount) internal{
-        // address payable payableAddress = address(uint160(from));
-        // msg.sender.transfer(amount);
+    function _transferBNBToOwner(uint256 amount) internal {
+        address owner=owner();
+        address payable ownerPayable = address(uint160(owner));
+        ownerPayable.transfer(amount);
     }
 
     function _transferDFy(uint256 amount) internal{
@@ -187,16 +188,18 @@ contract IdoDFY is Ownable {
 
         if(token!=address(0)){
             _transferTokenToOwner(token, amount);
-        }    
+        } else {
+            _transferBNBToOwner(amount);
+        }
 
-        _transferDFy(outputDFYAmount); 
+        _transferDFy(outputDFYAmount);
 
         uint256 referralReceiveAmount = 0;
         if (referral != address(0)
         && referral != msg.sender
         && beReferred[msg.sender] == address(0)
         && referralUserTotal[referral] < maxPersonRef) {
-            referralReceiveAmount=_calculateReferal(referral, outputDFYAmount);
+            referralReceiveAmount=_calculateReferral(referral, outputDFYAmount);
         }
 
         if (referralReceiveAmount > 0) {
@@ -223,16 +226,17 @@ contract IdoDFY is Ownable {
                 referralReceiveAmount,
                 block.timestamp
             );
+        } else{
+            emit BuyIDO(
+                token,
+                msg.sender,
+                amount,
+                outputDFYAmount,
+                address(0),
+                0,
+                block.timestamp
+            );
         }
-        emit BuyIDO(
-            token,
-            msg.sender,
-            amount,
-            outputDFYAmount,
-            address(0),
-            0,
-            block.timestamp
-        );
     }
 
     function _transferTokenToOwner(address token, uint256 amount) internal {
@@ -249,11 +253,11 @@ contract IdoDFY is Ownable {
         );
     }
 
-    function _calculateReferal(address referral, uint256 amount) internal view returns (uint256){
+    function _calculateReferral(address referral, uint256 amount) internal view returns (uint256){
         uint256 referralReceiveAmount = 0;
         uint256 expectedReferralReceiveAmount = (amount.mul(refRewardPercent)).div(
-                100
-            );
+            100
+        );
 
         if(referralRewardTotal[referral] + expectedReferralReceiveAmount <= maxRewardFromRef*(10 ** 18)) {
             referralReceiveAmount = expectedReferralReceiveAmount;
@@ -309,3 +313,4 @@ contract IdoDFY is Ownable {
     }
 
 }
+
