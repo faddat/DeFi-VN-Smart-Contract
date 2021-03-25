@@ -132,6 +132,7 @@ contract Staking is Ownable, Pausable {
     function reward(address _staker, uint256 _sid)
     public view
     returns (uint256 _reward)
+
     {
         StakingData memory data = stakingData[_staker][_sid];
         uint256 calculateTime = block.timestamp;
@@ -174,6 +175,7 @@ contract Staking is Ownable, Pausable {
 
     function stake(uint256 _pid, uint256 _amount)
     public
+    whenNotPaused
     returns (uint256 _sid)
     {
         Pool memory pool = stakingPools[_pid];
@@ -183,31 +185,40 @@ contract Staking is Ownable, Pausable {
         _sid = executeStake(msg.sender, _pid, _amount);
     }
 
-    function withdraw() public {
+    function withdraw()
+    public
+    whenNotPaused
+    {
         uint256 nStakeTime = numberStakeTime[msg.sender];
 
         for (uint i = 0; i < nStakeTime; i++) {
             StakingData storage data = stakingData[msg.sender][i];
-            if (data.status == StakingStatus.AVAILABLE && data.stakeTo <= block.timestamp) {
+            if (data.status == StakingStatus.AVAILABLE) {
                 uint256 reward = reward(msg.sender, i);
                 IERC20(DFY).transfer(msg.sender, reward);
-                IERC20(DFY).transfer(msg.sender, data.balance);
-                emit Withdraw(msg.sender, i);
                 emit Claim(msg.sender, reward, i);
-                totalVolume = totalVolume.sub(data.balance);
-                data.balance = 0;
-                data.status = StakingStatus.CLOSE;
                 data.stakeFrom = block.timestamp;
                 if (data.stakeFrom > data.stakeTo) {
                     data.stakeFrom = data.stakeTo;
                 }
                 data.interestEarned = data.interestEarned.add(reward);
+
+                if (data.stakeTo <= block.timestamp) {
+                    IERC20(DFY).transfer(msg.sender, data.balance);
+                    emit Withdraw(msg.sender, i);
+                    totalVolume = totalVolume.sub(data.balance);
+                    data.balance = 0;
+                    data.status = StakingStatus.CLOSE;
+                }
             }
         }
 
     }
 
-    function claim() public {
+    function claim()
+    public
+    whenNotPaused
+    {
         uint256 nStakeTime = numberStakeTime[msg.sender];
 
         for (uint i = 0; i < nStakeTime; i++) {
@@ -225,7 +236,10 @@ contract Staking is Ownable, Pausable {
         }
     }
 
-    function compound(uint256 _pid) public{
+    function compound(uint256 _pid)
+    public
+    whenNotPaused
+    {
         uint256 nStakeTime = numberStakeTime[msg.sender];
         uint256 totalBalance = 0;
         for (uint i = 0; i < nStakeTime; i++) {
