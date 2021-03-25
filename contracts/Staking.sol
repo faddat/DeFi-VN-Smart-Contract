@@ -17,7 +17,7 @@ contract Staking is Ownable, Pausable {
     uint256 public ZOOM = 100;
     uint256 public SECOND_IN_DAY = 86400;
     uint256 public DAY_IN_YEAR = 365;
-    address public DFY = 0x1a0B0c776950e31b05FB25e3d7E14f99592bFB71;
+    address public DFY = 0xD98560689C6e748DC37bc410B4d3096B1aA3D8C2;
     uint256 public totalVolume;
 
     function pause() onlyOwner public {
@@ -57,7 +57,6 @@ contract Staking is Ownable, Pausable {
         uint256 pid;
         uint256 stakeTo;
         uint256 apy;
-        uint256 interestEarned;
         StakingStatus status;
     }
 
@@ -201,7 +200,6 @@ contract Staking is Ownable, Pausable {
                 if (data.stakeFrom > data.stakeTo) {
                     data.stakeFrom = data.stakeTo;
                 }
-                data.interestEarned = data.interestEarned.add(reward);
 
                 if (data.stakeTo <= block.timestamp) {
                     IERC20(DFY).transfer(msg.sender, data.balance);
@@ -231,33 +229,8 @@ contract Staking is Ownable, Pausable {
                 if (data.stakeFrom > data.stakeTo) {
                     data.stakeFrom = data.stakeTo;
                 }
-                data.interestEarned = data.interestEarned.add(reward);
             }
         }
-    }
-
-    function compound(uint256 _pid)
-    public
-    whenNotPaused
-    {
-        uint256 nStakeTime = numberStakeTime[msg.sender];
-        uint256 totalBalance = 0;
-        for (uint i = 0; i < nStakeTime; i++) {
-            StakingData storage data = stakingData[msg.sender][i];
-            if (data.status == StakingStatus.AVAILABLE && data.stakeTo <= block.timestamp) {
-                uint256 reward = reward(msg.sender, i);
-                totalBalance = totalBalance.add(reward);
-                totalBalance = totalBalance.add(data.balance);
-                data.balance = 0;
-                data.status = StakingStatus.CLOSE;
-                data.stakeFrom = block.timestamp;
-                if (data.stakeFrom > data.stakeTo) {
-                    data.stakeFrom = data.stakeTo;
-                }
-                data.interestEarned = data.interestEarned.add(reward);
-            }
-        }
-        executeStake(msg.sender, _pid, totalBalance);
     }
 
     function emergencyWithdraw()
