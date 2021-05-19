@@ -91,6 +91,7 @@ contract PawnContract is Ownable, Pausable {
     uint256 public ZOOM;
     bool public initialized = false;
     address coldWallet;
+    address public admin;
 
     event CreateOffer(
         uint256 offerId,
@@ -159,7 +160,6 @@ contract PawnContract is Ownable, Pausable {
 
     /**
      * @dev initialize function
-     * @param _operator is operator address of this contract
      * @param _zoom is coefficient used to represent risk params
      * @param _penalty is number of overdue debt payments
      */
@@ -172,17 +172,19 @@ contract PawnContract is Ownable, Pausable {
         ZOOM = _zoom;
         penalty = _penalty;
         coldWallet = _coldWallet;
+        admin = msg.sender;
         initialized = true;
     }
 
-    function manualRemoveInit() { // delete on production
-        initialized = false;
+    function setOperator(address _newOperator) onlyAdmin external {
+        operator = _newOperator;
     }
-    function pause() onlyOperator public {
+
+    function pause() onlyOperator external {
         _pause();
     }
 
-    function unPause() onlyOperator public {
+    function unPause() onlyOperator external {
         _unpause();
     }
 
@@ -198,6 +200,11 @@ contract PawnContract is Ownable, Pausable {
 
     modifier onlyOperator() {
         require(operator == msg.sender, "caller is not the operator");
+        _;
+    }
+
+    modifier onlyAdmin() {
+        require(admin == msg.sender, "caller is not the admin");
         _;
     }
 
@@ -219,7 +226,7 @@ contract PawnContract is Ownable, Pausable {
         address _loanAsset,
         uint256 _expectedDurationQty,
         uint256 _expectedDurationType
-    ) public whenNotPaused payable
+    ) external whenNotPaused payable
     returns (uint256 _idx)
     {
         //check whitelist collateral token
@@ -271,7 +278,7 @@ contract PawnContract is Ownable, Pausable {
         uint256 _fines,
         uint256 _risk
     )
-    public whenNotPaused
+    external whenNotPaused
     returns (uint256 _idx)
     {
         // each address can create only 1 offer
@@ -302,7 +309,7 @@ contract PawnContract is Ownable, Pausable {
     * @dev cancel offer function, used for cancel offer
     * @param  _offerId is id of offer
     */
-    function cancelOffer(uint256 _offerId) public {
+    function cancelOffer(uint256 _offerId) external {
         Offer storage offer = offers[_offerId];
         require(offer.owner == msg.sender, 'not-owner-of-offer');
         require(offer.status == OfferStatus.PENDING, 'offer-executed');
@@ -314,7 +321,7 @@ contract PawnContract is Ownable, Pausable {
     * @dev cancel collateral function and return back collateral
     * @param  _collateralId is id of collateral
     */
-    function withdrawCollateral(uint256 _collateralId) public {
+    function withdrawCollateral(uint256 _collateralId) external {
         Collateral storage collateral = collaterals[_collateralId];
         require(collateral.owner == msg.sender, 'not-owner-of-this-collateral');
         require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
@@ -346,7 +353,7 @@ contract PawnContract is Ownable, Pausable {
         * @param  _collateralId is id of collateral
         * @param  _offerId is id of offer
         */
-    function acceptOffer(uint256 _collateralId, uint256 _offerId) public whenNotPaused {
+    function acceptOffer(uint256 _collateralId, uint256 _offerId) external whenNotPaused {
         Offer storage offer = offers[_offerId];
         Collateral storage collateral = collaterals[_collateralId];
         require(msg.sender == collateral.owner, 'not-collateral-owner');
@@ -402,7 +409,7 @@ contract PawnContract is Ownable, Pausable {
         uint256 _payForLoan,
         uint256 _payForFines
     )
-    public
+    external
     {
         Contract storage _contract = contracts[_contractId];
         RepaymentPhase storage repaymentPhase = repaymentPhases[_contractId][_contract.currentRepaymentPhase];
@@ -518,7 +525,7 @@ contract PawnContract is Ownable, Pausable {
         uint256 _penalty,
         uint256 _expiration
     )
-    public onlyOperator
+    external onlyOperator
     whenNotPaused
     {
         Contract storage _contract = contracts[_contractId];
@@ -543,7 +550,7 @@ contract PawnContract is Ownable, Pausable {
      * @param  _contractId is the id of contract
      */
     function liquidity(uint256 _contractId)
-    public onlyOperator
+    external onlyOperator
     whenNotPaused {
         executeLiquidity(_contractId);
     }
@@ -555,7 +562,7 @@ contract PawnContract is Ownable, Pausable {
     */
 
     function emergencyWithdraw(address _token)
-    public onlyOperator
+    external onlyAdmin
     whenPaused {
         if (_token == address (0)) {
             payable(coldWallet).transfer(address(this).balance);
