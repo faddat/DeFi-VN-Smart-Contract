@@ -165,18 +165,19 @@ contract PawnContract is Ownable, Pausable {
      */
 
     function initialize(
-        address _operator,
         uint256 _zoom,
         uint256 _penalty,
         address _coldWallet
     ) public notInitialized {
-        operator = _operator;
         ZOOM = _zoom;
         penalty = _penalty;
         coldWallet = _coldWallet;
         initialized = true;
     }
 
+    function manualRemoveInit() { // delete on production
+        initialized = false;
+    }
     function pause() onlyOperator public {
         _pause();
     }

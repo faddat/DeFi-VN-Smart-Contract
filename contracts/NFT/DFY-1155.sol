@@ -69,13 +69,21 @@ contract DFY1155 is Ownable, Pausable, ERC1155 {
     }
 
     function approveNFT(uint256 _pendingId, uint256 _status)
-    public onlyWhitelistAdmin
+    internal
     {
         NFT storage nft = queue[_pendingId];
         require(nft.status == NFTStatus.PENDING, 'not-pending-nft');
         nft.status = NFTStatus(_status);
         if (nft.status == NFTStatus.APPROVED) {
             mint(nft.owner, nft.maxSupply, nft.uri, nft.data);
+        }
+    }
+
+    function batchApprove(uint256[] calldata _pendingIds, uint256[] calldata _status)
+    external onlyWhitelistAdmin
+    {
+        for (uint256 i = 0; i < _pendingIds.length; i++) {
+            approveNFT(_pendingIds[i], _status[i]);
         }
     }
 
