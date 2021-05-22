@@ -1,19 +1,18 @@
-pragma solidity ^0.7.0;
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+pragma solidity ^0.8.4;
+
+import "openzeppelin-solidity/contracts/access/Ownable.sol";
+import "openzeppelin-solidity/contracts/security/Pausable.sol";
+import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 
-contract PawnContract is Ownable, Pausable {
+contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     uint256 public numberCollaterals;
     uint256 public numberOffers;
     uint256 public numberContracts;
     uint256 public numberPaymentHistory;
 
-    using SafeMath for uint256;
     using SafeERC20 for ERC20;
 
     enum CollateralStatus {OPEN, DOING, COMPLETED, CANCEL}
@@ -168,7 +167,7 @@ contract PawnContract is Ownable, Pausable {
         uint256 _zoom,
         uint256 _penalty,
         address _coldWallet
-    ) public notInitialized {
+    ) external notInitialized {
         ZOOM = _zoom;
         penalty = _penalty;
         coldWallet = _coldWallet;
@@ -233,8 +232,10 @@ contract PawnContract is Ownable, Pausable {
         require(whitelistCollateral[_collateralAddress] == 1, 'not-support-collateral');
         if (_collateralAddress != address(0)) {
             // transfer to this contract
+            uint256 preCollateralBalance = ERC20(_collateralAddress).balanceOf(address(this));
             ERC20(_collateralAddress).safeTransferFrom(msg.sender, address(this), _amount);
             ERC20(_collateralAddress).safeTransferFrom(msg.sender, address(this), systemFee[_collateralAddress]);
+            require(ERC20(_collateralAddress).balanceOf(address(this)) - preCollateralBalance == _amount + systemFee[_collateralAddress], 'not-enough-collateral');
         } else {
             _amount = msg.value;
         }
@@ -327,7 +328,7 @@ contract PawnContract is Ownable, Pausable {
         require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
         if (collateral.collateralAddress != address(0)) {
             // transfer collateral to collateral's owner
-            ERC20(collateral.collateralAddress).transfer(collateral.owner, collateral.amount);
+            require(ERC20(collateral.collateralAddress).transfer(collateral.owner, collateral.amount), 'transfer-collateral-fail');
         } else {
             payable(collateral.owner).transfer(collateral.amount);
         }
@@ -336,7 +337,7 @@ contract PawnContract is Ownable, Pausable {
     }
 
     function calculationOfferDuration(uint256 _offerId)
-    internal
+    internal view
     returns (uint256 duration)
     {
         Offer memory offer = offers[_offerId];
@@ -427,19 +428,19 @@ contract PawnContract is Ownable, Pausable {
         if (_payForFines > repaymentPhase.remainingFines) {
             _payForFines = repaymentPhase.remainingFines;
         }
-        repaymentPhase.remainingInterest = repaymentPhase.remainingInterest.sub(_payForInterest);
-        repaymentPhase.remainingLoan = repaymentPhase.remainingLoan.sub(_payForLoan);
-        repaymentPhase.remainingFines = repaymentPhase.remainingFines.sub(_payForFines);
-        repaymentPhase.paidForInterest = repaymentPhase.paidForInterest.add(_payForInterest);
-        repaymentPhase.paidForLoan = repaymentPhase.paidForLoan.add(_payForLoan);
-        repaymentPhase.paidForFines = repaymentPhase.paidForFines.add(_payForFines);
+        repaymentPhase.remainingInterest -= _payForInterest;
+        repaymentPhase.remainingLoan -= _payForLoan;
+        repaymentPhase.remainingFines -= _payForFines;
+        repaymentPhase.paidForInterest += _payForInterest;
+        repaymentPhase.paidForLoan += _payForLoan;
+        repaymentPhase.paidForFines += _payForFines;
 
         ERC20(offer.repaymentAsset).safeTransferFrom(msg.sender, offer.owner, _payForInterest);
         ERC20(offer.repaymentAsset).safeTransferFrom(msg.sender, offer.owner, _payForLoan);
         ERC20(offer.repaymentAsset).safeTransferFrom(msg.sender, offer.owner, _payForFines);
 
         //the borrower has paid off all the debt
-        if (repaymentPhase.remainingInterest.add(repaymentPhase.remainingLoan).add(repaymentPhase.remainingFines) == 0) {
+        if (repaymentPhase.remainingInterest + repaymentPhase.remainingLoan+ repaymentPhase.remainingFines== 0) {
             executeLiquidity(_contractId);
         }
         uint256 historyId = createPaymentHistory(_contractId, msg.sender, offer.repaymentAsset, _payForLoan, _payForInterest, _payForFines);
@@ -489,7 +490,7 @@ contract PawnContract is Ownable, Pausable {
         RepaymentPhase memory repaymentPhase = repaymentPhases[_contractId][_contract.currentRepaymentPhase];
 
         //the borrower has paid off all the debt
-        if (repaymentPhase.remainingInterest.add(repaymentPhase.remainingLoan).add(repaymentPhase.remainingFines) == 0) {
+        if (repaymentPhase.remainingInterest + repaymentPhase.remainingLoan + repaymentPhase.remainingFines == 0) {
             //transfer collateral asset back to collateral's owner
             if (collateral.collateralAddress != address(0)) {
                 IERC20(collateral.collateralAddress).transfer(collateral.owner, collateral.amount);
@@ -529,7 +530,6 @@ contract PawnContract is Ownable, Pausable {
     whenNotPaused
     {
         Contract storage _contract = contracts[_contractId];
-        Offer memory offer = offers[_contract.offerId];
         require(_contract.status == ContractStatus.ACTIVE, 'Contract inactive');
         if (_penalty > penalty) {
             executeLiquidity(_contractId);
