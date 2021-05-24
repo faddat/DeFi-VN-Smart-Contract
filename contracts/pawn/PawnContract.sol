@@ -92,6 +92,21 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     address coldWallet;
     address public admin;
 
+    event CreateCollateral(
+        uint256 collateralId,
+        uint256 amount,
+        address walletAddress,
+        address cryptoAsset,
+        address expectedCryptoAssetSymbol,
+        uint256 expectedDurationQty,
+        uint256 expectedDurationType
+    );
+
+    event WithdrawCollateral(
+        uint256 collateralId,
+        address collateralOwner
+    );
+
     event CreateOffer(
         uint256 offerId,
         uint256 collateralId,
@@ -107,24 +122,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 risk
     );
 
-    event CreateCollateral(
-        uint256 collateralId,
-        uint256 amount,
-        address walletAddress,
-        address cryptoAsset,
-        address expectedCryptoAssetSymbol,
-        uint256 expectedDurationQty,
-        uint256 expectedDurationType
-    );
-
     event CancelOffer(
         uint256 offerId,
         address offerOwner
-    );
-
-    event WithdrawCollateral(
-        uint256 collateralId,
-        address collateralOwner
     );
 
     event AcceptOffer(
