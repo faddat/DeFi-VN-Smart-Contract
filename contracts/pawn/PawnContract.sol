@@ -284,6 +284,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     {
         // each address can create only 1 offer
         require(lastOffer[msg.sender][_collateralId] == 0, 'has-offer-before');
+        Collateral memory collateral = collaterals[_collateralId];
+        require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
+
         lastOffer[msg.sender][_collateralId] = 1;
 
         _idx = numberOffers;
@@ -301,7 +304,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         newOffer.status = OfferStatus.PENDING;
         ++numberOffers;
 
-        Collateral memory collateral = collaterals[_collateralId];
+
         emit CreateOffer(_idx, _collateralId, msg.sender, _repaymentAsset, collateral.loanAsset,
             _loanAmount, _duration, _interest, _loanDurationType, _repaymentCycleType, _fines, _risk);
     }
@@ -326,6 +329,11 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         Collateral storage collateral = collaterals[_collateralId];
         require(collateral.owner == msg.sender, 'not-owner-of-this-collateral');
         require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
+        for (uint256 i = 0; i < numberOffers; i++) {
+            if (offers[i].collateralId == _collateralId) {
+                offers[i].status = OfferStatus.CANCEL;
+            }
+        }
         if (collateral.collateralAddress != address(0)) {
             // transfer collateral to collateral's owner
             require(ERC20(collateral.collateralAddress).transfer(collateral.owner, collateral.amount), 'transfer-collateral-fail');
