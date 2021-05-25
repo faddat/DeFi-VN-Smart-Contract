@@ -385,7 +385,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         offer.status = OfferStatus.ACCEPTED;
         collateral.status = CollateralStatus.DOING;
         for (uint256 i = 0; i < numberOffers; i++) {
-            if (offers[i].collateralId == _collateralId) {
+            if (offers[i].collateralId == _collateralId && _offerId != i) {
                 offers[i].status = OfferStatus.CANCEL;
                 emit CancelOffer(i, offers[i].owner);
             }
