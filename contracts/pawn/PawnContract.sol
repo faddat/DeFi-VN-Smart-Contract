@@ -128,10 +128,12 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     );
 
     event AcceptOffer(
+        address fromAddress,
         uint256 contractId,
         uint256 collateralId,
         uint256 offerId,
         address offerOwner,
+        address collateralOwner,
         uint256 startContract,
         uint256 endContract
     );
@@ -379,7 +381,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         //change status of offer and collateral
         offer.status = OfferStatus.ACCEPTED;
         collateral.status = CollateralStatus.DOING;
-        emit AcceptOffer(contractId, _collateralId, _offerId, msg.sender, block.timestamp, block.timestamp + calculationOfferDuration(_offerId));
+        emit AcceptOffer(msg.sender, contractId, _collateralId, _offerId, offer.owner, collateral.owner, block.timestamp, block.timestamp + calculationOfferDuration(_offerId));
     }
 
 
