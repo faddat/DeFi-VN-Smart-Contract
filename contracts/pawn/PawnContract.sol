@@ -1,10 +1,12 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.4;
 
-import "openzeppelin-solidity/contracts/access/Ownable.sol";
-import "openzeppelin-solidity/contracts/security/Pausable.sol";
-import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 
 contract PawnContract is Ownable, Pausable, ReentrancyGuard {
@@ -382,6 +384,13 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         //change status of offer and collateral
         offer.status = OfferStatus.ACCEPTED;
         collateral.status = CollateralStatus.DOING;
+        for (uint256 i = 0; i < numberOffers; i++) {
+            if (offers[i].collateralId == _collateralId) {
+                offers[i].status = OfferStatus.CANCEL;
+                emit CancelOffer(i, offers[i].owner);
+            }
+        }
+
         emit AcceptOffer(msg.sender, contractId, _collateralId, _offerId, offer.owner, collateral.owner, block.timestamp, block.timestamp + calculationOfferDuration(_offerId));
     }
 
