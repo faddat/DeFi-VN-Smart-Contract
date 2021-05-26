@@ -1,4 +1,4 @@
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.4;
 
 import "@vittominacori/erc20-token/contracts/ERC20Base.sol";
 import "@vittominacori/erc20-token/contracts/access/Roles.sol";
