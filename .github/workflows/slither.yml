@@ -10,4 +10,4 @@ jobs:
       - name: solidity
         run: brew install solidity
       - name: slither
-        run: pip3 install slither
+        run: pip3 install slither-analyzer
