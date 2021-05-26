@@ -1,10 +1,12 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.4;
 
-import "openzeppelin-solidity/contracts/access/Ownable.sol";
-import "openzeppelin-solidity/contracts/security/Pausable.sol";
-import "openzeppelin-solidity/contracts/security/ReentrancyGuard.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/utils/SafeERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 
 contract PawnContract is Ownable, Pausable, ReentrancyGuard {
@@ -92,6 +94,21 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     address coldWallet;
     address public admin;
 
+    event CreateCollateral(
+        uint256 collateralId,
+        uint256 amount,
+        address walletAddress,
+        address cryptoAsset,
+        address expectedCryptoAssetSymbol,
+        uint256 expectedDurationQty,
+        uint256 expectedDurationType
+    );
+
+    event WithdrawCollateral(
+        uint256 collateralId,
+        address collateralOwner
+    );
+
     event CreateOffer(
         uint256 offerId,
         uint256 collateralId,
@@ -107,31 +124,18 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 risk
     );
 
-    event CreateCollateral(
-        uint256 collateralId,
-        uint256 amount,
-        address walletAddress,
-        address cryptoAsset,
-        address expectedCryptoAssetSymbol,
-        uint256 expectedDurationQty,
-        uint256 expectedDurationType
-    );
-
     event CancelOffer(
         uint256 offerId,
         address offerOwner
     );
 
-    event WithdrawCollateral(
-        uint256 collateralId,
-        address collateralOwner
-    );
-
     event AcceptOffer(
+        address fromAddress,
         uint256 contractId,
         uint256 collateralId,
         uint256 offerId,
         address offerOwner,
+        address collateralOwner,
         uint256 startContract,
         uint256 endContract
     );
@@ -329,6 +333,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         for (uint256 i = 0; i < numberOffers; i++) {
             if (offers[i].collateralId == _collateralId) {
                 offers[i].status = OfferStatus.CANCEL;
+                emit CancelOffer(i, offers[i].owner);
             }
         }
         if (collateral.collateralAddress != address(0)) {
@@ -376,7 +381,14 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         //change status of offer and collateral
         offer.status = OfferStatus.ACCEPTED;
         collateral.status = CollateralStatus.DOING;
-        emit AcceptOffer(contractId, _collateralId, _offerId, msg.sender, block.timestamp, block.timestamp + calculationOfferDuration(_offerId));
+        for (uint256 i = 0; i < numberOffers; i++) {
+            if (offers[i].collateralId == _collateralId && _offerId != i) {
+                offers[i].status = OfferStatus.CANCEL;
+                emit CancelOffer(i, offers[i].owner);
+            }
+        }
+
+        emit AcceptOffer(msg.sender, contractId, _collateralId, _offerId, offer.owner, collateral.owner, block.timestamp, block.timestamp + calculationOfferDuration(_offerId));
     }
 
 
