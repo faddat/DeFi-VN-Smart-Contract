@@ -283,11 +283,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     returns (uint256 _idx)
     {
         // each address can create only 1 offer
-        require(lastOffer[msg.sender][_collateralId] == 0, 'has-offer-before');
         Collateral memory collateral = collaterals[_collateralId];
         require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
-
-        lastOffer[msg.sender][_collateralId] = 1;
 
         _idx = numberOffers;
         Offer storage newOffer = offers[_idx];
