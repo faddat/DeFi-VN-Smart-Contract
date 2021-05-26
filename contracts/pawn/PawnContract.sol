@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.4;
+pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
@@ -83,15 +83,15 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     mapping (uint256 => Contract) public contracts;
     mapping (uint256 => PaymentHistory) public paymentHistories;
     mapping (uint256 => mapping(uint256 => RepaymentPhase)) public repaymentPhases;
-    mapping (address => uint256) whitelistCollateral;
+    mapping (address => uint256) internal whitelistCollateral;
     mapping (address => mapping(uint256 => uint256)) public lastOffer;
-    mapping (address => uint256) systemFee;
+    mapping (address => uint256) internal systemFee;
 
     address public operator;
     uint256 public penalty;
     uint256 public ZOOM;
     bool public initialized = false;
-    address coldWallet;
+    address internal coldWallet;
     address public admin;
 
     event CreateCollateral(

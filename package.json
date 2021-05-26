@@ -25,11 +25,18 @@
     "@openzeppelin/contracts": "latest",
     "@truffle/hdwallet-provider": "latest",
     "dotenv": "latest",
-    "truffle": "^5.3.7",
+    "is-core-module": "^2.4.0",
+    "loader": "^2.1.1",
     "truffle-flattener": "latest",
     "web3": "latest"
   },
   "devDependencies": {
-    "hardhat": "latest"
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@openzeppelin/truffle-upgrades": "^1.7.0",
+    "chai": "^4.3.4",
+    "ethereum-waffle": "^3.3.0",
+    "ethers": "^5.2.0",
+    "hardhat": "^2.3.0"
   }
 }

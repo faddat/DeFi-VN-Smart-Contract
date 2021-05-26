@@ -247,7 +247,7 @@ contract UpgradeabilityProxy is Proxy {
      * https://solidity.readthedocs.io/en/v0.4.24/abi-spec.html#function-selector-and-argument-encoding.
      * This parameter is optional, if no data is given the initialization call to proxied contract will be skipped.
      */
-    constructor(address _logic, bytes memory _data) public payable {
+    constructor(address _logic, bytes memory _data) payable {
         assert(IMPLEMENTATION_SLOT == bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1));
         _setImplementation(_logic);
         if (_data.length > 0) {
@@ -326,7 +326,7 @@ contract AdminUpgradeabilityProxy is UpgradeabilityProxy {
         address _logic,
         address _admin,
         bytes memory _data
-    ) public payable UpgradeabilityProxy(_logic, _data) {
+    ) payable UpgradeabilityProxy(_logic, _data) {
         assert(ADMIN_SLOT == bytes32(uint256(keccak256("eip1967.proxy.admin")) - 1));
         _setAdmin(_admin);
     }
