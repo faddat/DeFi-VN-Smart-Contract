@@ -15,11 +15,27 @@ jobs:
         run: curl -L get.web3j.io | sh && source ~/.web3j/source.sh
       - name: DFY-1155.sol
         run: source ~/.web3j/source.sh && web3j audit contracts/NFT/DFY-1155.sol
+        continue-on-error: true
       - name: AdminUpgradeabilityProxy.sol
         run: source ~/.web3j/source.sh && web3j audit contracts/pawn/AdminUpgradeabilityProxy.sol
+        continue-on-error: true
       - name: PawnContract.sol
         run: source ~/.web3j/source.sh && web3j audit contracts/pawn/PawnContract.sol
+        continue-on-error: true
       - name: Staking.sol
         run: source ~/.web3j/source.sh && web3j audit contracts/staking/Staking.sol
+        continue-on-error: true
+      - name: DFY.sol
+        run: source ~/.web3j/source.sh && web3j audit DFYToken/DFY.sol
+        continue-on-error: true
+      - name: DFYTreasure.sol
+        run: source ~/.web3j/source.sh && web3j audit DFYToken/DFYTreasure.sol
+        continue-on-error: true
+      - name: ERC20CustomToken.sol
+        run: source ~/.web3j/source.sh && web3j audit DFYToken/DFYTreasure.sol
+        continue-on-error: true
+      - name: IdoDFY.sol
+        run: source ~/.web3j/source.sh && web3j audit IDO/IdoDFY.sol
+
 
 
