@@ -1,7 +1,7 @@
 pragma solidity ^0.8.4;
 
-import "@vittominacori/erc20-token/contracts/ERC20Base.sol";
-import "@vittominacori/erc20-token/contracts/access/Roles.sol";
+import "@jacobgadikian/erc20-token/contracts/ERC20Base.sol";
+import "@jacobgadikian/erc20-token/contracts/access/Roles.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";

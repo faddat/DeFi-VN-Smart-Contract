@@ -25,6 +25,7 @@
     "@openzeppelin/contracts": "latest",
     "@truffle/hdwallet-provider": "latest",
     "dotenv": "latest",
+    "truffle": "^5.3.7",
     "truffle-flattener": "latest",
     "web3": "latest"
   },

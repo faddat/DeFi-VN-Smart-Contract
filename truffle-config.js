@@ -3,7 +3,7 @@ require('dotenv').config();
 const HDWalletProvider = require("@truffle/hdwallet-provider");
 
 const solcStable = {
-  version: "^0.7.0",
+  version: "^0.8.4",
   settings: {
     optimizer: {
       enabled: true,
