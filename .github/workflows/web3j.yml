@@ -1,0 +1,25 @@
+on: [push,pull_request]
+
+jobs:
+  main_job:
+    runs-on: ubuntu-latest
+    name: Solidity Security 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: NPM Install
+        run: npm i
+      - name: solidity
+        run: brew install solidity
+      - name: web3j
+        run: curl -L get.web3j.io | sh && source ~/.web3j/source.sh
+      - name: DFY-1155.sol
+        run: web3j audit contracts/NFT/DFY-1155.sol
+      - name: AdminUpgradeabilityProxy.sol
+        run: web3j audit contracts/pawn/AdminUpgradeabilityProxy.sol
+      - name: PawnContract.sol
+        run: web3j audit contracts/pawn/PawnContract.sol
+      - name: Staking.sol
+        run: web3j audit contracts/staking/Staking.sol
+
+
