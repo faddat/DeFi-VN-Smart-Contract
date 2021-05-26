@@ -32,7 +32,7 @@ jobs:
         run: source ~/.web3j/source.sh && web3j audit DFYToken/DFYTreasure.sol
         continue-on-error: true
       - name: ERC20CustomToken.sol
-        run: source ~/.web3j/source.sh && web3j audit DFYToken/DFYTreasure.sol
+        run: source ~/.web3j/source.sh && web3j audit DFYToken/ERC20CustomToken.sol
         continue-on-error: true
       - name: IdoDFY.sol
         run: source ~/.web3j/source.sh && web3j audit IDO/IdoDFY.sol
