@@ -12,5 +12,6 @@ jobs:
         node-version: '14'
     - run: npm i -g truffle
     - run: npm install
+    - run: truffle compile
 #    - run: npm test
 # reinstate the test after ensuring that this can connect to a BSC network
