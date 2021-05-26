@@ -26,16 +26,17 @@ jobs:
         run: source ~/.web3j/source.sh && web3j audit contracts/staking/Staking.sol
         continue-on-error: true
       - name: DFY.sol
-        run: source ~/.web3j/source.sh && web3j audit DFYToken/DFY.sol
+        run: source ~/.web3j/source.sh && web3j audit DFYtoken/DFY.sol
         continue-on-error: true
       - name: DFYTreasure.sol
-        run: source ~/.web3j/source.sh && web3j audit DFYToken/DFYTreasure.sol
+        run: source ~/.web3j/source.sh && web3j audit DFYtoken/DFYTreasure.sol
         continue-on-error: true
       - name: ERC20CustomToken.sol
-        run: source ~/.web3j/source.sh && web3j audit DFYToken/ERC20CustomToken.sol
+        run: source ~/.web3j/source.sh && web3j audit DFYtoken/ERC20CustomToken.sol
         continue-on-error: true
       - name: IdoDFY.sol
         run: source ~/.web3j/source.sh && web3j audit IDO/IdoDFY.sol
+        continue-on-error: true
 
 
 
