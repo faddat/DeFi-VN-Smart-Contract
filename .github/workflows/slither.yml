@@ -1,4 +1,4 @@
-on: [push]
+on: [push,pull_request]
 
 jobs:
   main_job:
@@ -7,27 +7,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-# This is here because npm install does not work
-      - name: Slither Static Analysis
-        uses: luisfontes19/slither-static-analysis-action@v0.3.2
-        with:
-          slither-version: '0.8.0'
-          run-npm-install: false
-          high-threshold: 1
-          medium-threshold: 1
-          low-threshold: 1
-          optimization-threshold: 1
-          informative-threshold: 10
-          projectPath: "."
-# this will fail
-      - name: Slither Static Analysis
-        uses: luisfontes19/slither-static-analysis-action@v0.3.2
-        with:
-          slither-version: '0.8.0'
-          run-npm-install: true
-          high-threshold: 1
-          medium-threshold: 1
-          low-threshold: 1
-          optimization-threshold: 1
-          informative-threshold: 10
-          projectPath: "."
+      - name: solidity
+        run: brew install solidity
+      - name: slither
+        run: pip3 install slither
