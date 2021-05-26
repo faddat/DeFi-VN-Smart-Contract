@@ -23,6 +23,7 @@
     "@babel/core": "^7.14.3",
     "@jacobgadikian/erc20-token": "github:faddat/erc20-token",
     "@openzeppelin/contracts": "latest",
+    "@openzeppelin/hardhat-upgrades": "^1.8.2",
     "@truffle/hdwallet-provider": "latest",
     "dotenv": "latest",
     "is-core-module": "^2.4.0",
