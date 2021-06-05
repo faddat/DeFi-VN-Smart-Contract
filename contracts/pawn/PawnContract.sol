@@ -218,6 +218,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     /**
     * @dev create Collateral function, collateral will be stored in this contract
     * @param _collateralAddress is address of collateral
+    * @param _packageId is id of pawn shop package
     * @param _amount is amount of token
     * @param _loanAsset is address of loan token
     * @param _expectedDurationQty is expected duration
@@ -225,6 +226,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     */
     function createCollateral(
         address _collateralAddress,
+        uint256 _packageId,
         uint256 _amount,
         address _loanAsset,
         uint256 _expectedDurationQty,
@@ -259,6 +261,21 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         ++numberCollaterals;
 
         emit CreateCollateral(_idx, _amount, msg.sender, _collateralAddress, _loanAsset, _expectedDurationQty, _expectedDurationType);
+    }
+
+    /**
+    * @dev Submit Collateral to Package function, collateral will be submit to pawnshop package
+    * @param _collateralId is id of collateral
+    * @param _packageId is id of pawn shop package
+    */
+    function submitCollateralToPackage(
+        uint256 _collateralId,
+        uint256 _packageId
+    ) external whenNotPaused payable
+    returns (uint256 _idx)
+    {
+        // TODO
+        return (0);
     }
 
     /**
