@@ -14,6 +14,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     uint256 public numberOffers;
     uint256 public numberContracts;
     uint256 public numberPaymentHistory;
+    uint256 public numberPawnShopPackages;
 
     using SafeERC20 for ERC20;
 
@@ -26,6 +27,30 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 expectedDurationQty;
         uint256 expectedDurationType;
         CollateralStatus status;
+    }
+
+    enum PawnShopPackageStatus {ACTIVE, INACTIVE}
+    enum PawnShopPackageType {AUTO, SEMI_AUTO}
+
+    struct Range {
+        uint256 lowerBound;
+        uint256 upperBound;
+    }
+
+    struct PawnShopPackage {
+        address owner;
+        PawnShopPackageStatus status;
+        PawnShopPackageType packageType;
+        address loanToken;
+        Range loanAmountRange;
+        address[] collateralAcceptance;
+        uint256 interest;
+        uint256 durationType;
+        Range durationRange;
+        address repaymentAsset;
+        uint256 repaymentCycleType;
+        uint256 loanToValue;
+        uint256 loanToValueLiquidationThreshold;
     }
 
     enum OfferStatus {PENDING, ACCEPTED, COMPLETED, CANCEL}
@@ -50,6 +75,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     struct Contract {
         uint256 collateralId;
         uint256 offerId;
+        uint256 pawnShopPackageId;
         uint256 currentRepaymentPhase;
         uint256 penalty;
         ContractStatus status;
@@ -80,8 +106,11 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
     mapping (uint256 => Offer) public offers;
     mapping (uint256 => Collateral) public collaterals;
+    mapping (uint256 => PawnShopPackage) public pawnShopPackages;
     mapping (uint256 => Contract) public contracts;
     mapping (uint256 => PaymentHistory) public paymentHistories;
+    mapping (uint256 => mapping(uint256 => bool)) public pawnShopPackageSubmittedCollaterals;
+    mapping (uint256 => mapping(uint256 => bool)) public pawnShopPackageActiveContracts;
     mapping (uint256 => mapping(uint256 => RepaymentPhase)) public repaymentPhases;
     mapping (address => uint256) whitelistCollateral;
     mapping (address => mapping(uint256 => uint256)) public lastOffer;
@@ -93,6 +122,21 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     bool public initialized = false;
     address coldWallet;
     address public admin;
+
+    event CreatePawnShopPackage(
+        uint256 packageId,
+        PawnShopPackage data
+    );
+
+    event ChangeStatusPawnShopPackage(
+        uint256 packageId,
+        PawnShopPackageStatus status         
+    );
+
+    event SubmitPawnShopPackage(
+        uint256 packageId,
+        uint256 collateralId
+    );
 
     event CreateCollateral(
         uint256 collateralId,
@@ -215,6 +259,77 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         whitelistCollateral[_token] = _status;
     }
 
+    function createPawnShopPackage(
+        PawnShopPackageType _packageType,
+        address _loanToken,
+        Range calldata _loanAmountRange,
+        address[] calldata _collateralAcceptance,
+        uint256 _interest,
+        uint256 _durationType,
+        Range calldata _durationRange,
+        address _repaymentAsset,
+        uint256 _repaymentCycleType,
+        uint256 _loanToValue,
+        uint256 _loanToValueLiquidationThreshold
+    ) external whenNotPaused
+    returns (uint256 _idx)
+    {
+        _idx = numberPawnShopPackages;
+
+        // Validataion logic: whitelist collateral, ranges must have upper greater than lower, duration type
+        for (uint256 i = 0; i < _collateralAcceptance.length; i++) {
+            require(whitelistCollateral[_collateralAcceptance[i]] == 1, 'not-support-collateral');
+        }
+
+        require(_loanAmountRange.lowerBound < _loanAmountRange.upperBound, 'loan-range-invalid');
+        require(_durationRange.lowerBound < _durationRange.upperBound, 'duration-range-invalid');
+        require(_durationType == uint256(LoanDurationType.MONTH) || _durationType == uint256(LoanDurationType.WEEK), 'duration-type-invalid');
+
+        //create new collateral
+        PawnShopPackage storage newPackage = pawnShopPackages[_idx];
+        newPackage.owner = msg.sender;
+        newPackage.status = PawnShopPackageStatus.ACTIVE;
+        newPackage.packageType = _packageType;
+        newPackage.loanToken = _loanToken;
+        newPackage.loanAmountRange = _loanAmountRange;
+        newPackage.collateralAcceptance = _collateralAcceptance;
+        newPackage.interest = _interest;
+        newPackage.durationType = _durationType;
+        newPackage.durationRange = _durationRange;
+        newPackage.repaymentAsset = _repaymentAsset;
+        newPackage.repaymentCycleType = _repaymentCycleType;
+        newPackage.loanToValue = _loanToValue;
+        newPackage.loanToValueLiquidationThreshold = _loanToValueLiquidationThreshold;
+
+        ++numberPawnShopPackages;
+        emit CreatePawnShopPackage(
+            _idx, 
+            newPackage
+        );
+    }
+
+    function activePawnShopPackage(uint256 _packageId)
+    external whenNotPaused
+    {
+        PawnShopPackage storage pawnShopPackage = pawnShopPackages[_packageId];
+        require(pawnShopPackage.owner == msg.sender, 'not-owner-of-this-package');
+        require(pawnShopPackage.status == PawnShopPackageStatus.INACTIVE, 'package-not-inactive');
+
+        pawnShopPackage.status = PawnShopPackageStatus.ACTIVE;
+        emit ChangeStatusPawnShopPackage(_packageId, PawnShopPackageStatus.ACTIVE);
+    }
+
+    function deactivePawnShopPackage(uint256 _packageId)
+    external
+    {
+        PawnShopPackage storage pawnShopPackage = pawnShopPackages[_packageId];
+        require(pawnShopPackage.owner == msg.sender, 'not-owner-of-this-package');
+        require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package-not-active');
+
+        pawnShopPackage.status = PawnShopPackageStatus.INACTIVE;
+        emit ChangeStatusPawnShopPackage(_packageId, PawnShopPackageStatus.INACTIVE);
+    }
+
     /**
     * @dev create Collateral function, collateral will be stored in this contract
     * @param _collateralAddress is address of collateral
@@ -236,6 +351,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     {
         //check whitelist collateral token
         require(whitelistCollateral[_collateralAddress] == 1, 'not-support-collateral');
+
         if (_collateralAddress != address(0)) {
             // transfer to this contract
             uint256 preCollateralBalance = ERC20(_collateralAddress).balanceOf(address(this));
@@ -261,6 +377,14 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         ++numberCollaterals;
 
         emit CreateCollateral(_idx, _amount, msg.sender, _collateralAddress, _loanAsset, _expectedDurationQty, _expectedDurationType);
+
+        if (_packageId >= 0) {
+            //package must active
+            PawnShopPackage storage pawnShopPackage = pawnShopPackages[_packageId];
+            require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package-not-support');
+            pawnShopPackageSubmittedCollaterals[_packageId][_idx] = true;
+            emit SubmitPawnShopPackage(_packageId, _idx);
+        }
     }
 
     /**
@@ -271,11 +395,17 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     function submitCollateralToPackage(
         uint256 _collateralId,
         uint256 _packageId
-    ) external whenNotPaused payable
-    returns (uint256 _idx)
+    ) external whenNotPaused
     {
-        // TODO
-        return (0);
+        Collateral storage collateral = collaterals[_collateralId];
+        require(collateral.owner == msg.sender, 'not-owner-of-collateral');
+        require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
+        
+        PawnShopPackage storage pawnShopPackage = pawnShopPackages[_packageId];
+        require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package-not-open');
+        
+        pawnShopPackageSubmittedCollaterals[_packageId][_collateralId] = true;
+        emit SubmitPawnShopPackage(_packageId, _collateralId);
     }
 
     /**
