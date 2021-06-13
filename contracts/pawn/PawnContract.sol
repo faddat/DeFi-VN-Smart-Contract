@@ -341,7 +341,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     */
     function createCollateral(
         address _collateralAddress,
-        uint256 _packageId,
+        int256 _packageId,
         uint256 _amount,
         address _loanAsset,
         uint256 _expectedDurationQty,
@@ -380,10 +380,10 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         if (_packageId >= 0) {
             //package must active
-            PawnShopPackage storage pawnShopPackage = pawnShopPackages[_packageId];
+            PawnShopPackage storage pawnShopPackage = pawnShopPackages[uint256(_packageId)];
             require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package-not-support');
-            pawnShopPackageSubmittedCollaterals[_packageId][_idx] = true;
-            emit SubmitPawnShopPackage(_packageId, _idx);
+            pawnShopPackageSubmittedCollaterals[uint256(_packageId)][_idx] = true;
+            emit SubmitPawnShopPackage(uint256(_packageId), _idx);
         }
     }
 
