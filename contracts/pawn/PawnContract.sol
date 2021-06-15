@@ -408,6 +408,31 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit SubmitPawnShopPackage(_packageId, _collateralId);
     }
 
+    function acceptCollateralOfPackage(
+        uint256 _collateralId,
+        uint256 _packageId
+    ) external whenNotPaused
+    {
+        // TODO: Store status of package id and collateral id for: waiting for accept, accepted, rejected
+        // TODO: check for owner of packageId
+        // TODO: check for collateral status is open
+        // TODO: check for collateral-package status is waiting for accept
+        // TODO: set status of collateral-package to waiting for generate contract
+        // TODO: set status of collateral status for accepted
+    }
+
+    function rejectCollateralOfPackage(
+        uint256 _collateralId,
+        uint256 _packageId
+    ) external whenNotPaused
+    {
+        // TODO: Store status of package id and collateral id for: waiting for accept, accepted, rejected
+        // TODO: check for owner of packageId
+        // TODO: check for collateral-package status is waiting for accept
+        // TODO: change status of collateral-package to rejected
+    }
+
+
     /**
     * @dev create Collateral function, collateral will be stored in this contract
     * @param _collateralId is id of collateral
