@@ -56,6 +56,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     enum OfferStatus {PENDING, ACCEPTED, COMPLETED, CANCEL}
     enum RepaymentCycleType {WEEK, MONTH}
     enum LoanDurationType {WEEK, MONTH}
+    enum CollateralSubmitPawnShopPackageStatus {PENDING, ACCEPTED, REJECTED, CONTRACTED, CANCEL}
+
     struct Offer {
         address owner;
         uint256 collateralId;
@@ -109,8 +111,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     mapping (uint256 => PawnShopPackage) public pawnShopPackages;
     mapping (uint256 => Contract) public contracts;
     mapping (uint256 => PaymentHistory) public paymentHistories;
-    mapping (uint256 => mapping(uint256 => bool)) public pawnShopPackageSubmittedCollaterals;
-    mapping (uint256 => mapping(uint256 => bool)) public pawnShopPackageActiveContracts;
+    mapping (uint256 => mapping(uint256 => CollateralSubmitPawnShopPackageStatus)) public pawnShopPackageSubmittedCollaterals;
     mapping (uint256 => mapping(uint256 => RepaymentPhase)) public repaymentPhases;
     mapping (address => uint256) whitelistCollateral;
     mapping (address => mapping(uint256 => uint256)) public lastOffer;
@@ -135,7 +136,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
     event SubmitPawnShopPackage(
         uint256 packageId,
-        uint256 collateralId
+        uint256 collateralId,
+        CollateralSubmitPawnShopPackageStatus status
     );
 
     event CreateCollateral(
@@ -382,8 +384,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             //package must active
             PawnShopPackage storage pawnShopPackage = pawnShopPackages[uint256(_packageId)];
             require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package-not-support');
-            pawnShopPackageSubmittedCollaterals[uint256(_packageId)][_idx] = true;
-            emit SubmitPawnShopPackage(uint256(_packageId), _idx);
+            pawnShopPackageSubmittedCollaterals[uint256(_packageId)][_idx] = CollateralSubmitPawnShopPackageStatus.PENDING;
+            emit SubmitPawnShopPackage(uint256(_packageId), _idx, CollateralSubmitPawnShopPackageStatus.PENDING);
         }
     }
 
@@ -404,8 +406,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         PawnShopPackage storage pawnShopPackage = pawnShopPackages[_packageId];
         require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package-not-open');
         
-        pawnShopPackageSubmittedCollaterals[_packageId][_collateralId] = true;
-        emit SubmitPawnShopPackage(_packageId, _collateralId);
+        pawnShopPackageSubmittedCollaterals[_packageId][_collateralId] = CollateralSubmitPawnShopPackageStatus.PENDING;
+        emit SubmitPawnShopPackage(_packageId, _collateralId, CollateralSubmitPawnShopPackageStatus.PENDING);
     }
 
     function acceptCollateralOfPackage(
