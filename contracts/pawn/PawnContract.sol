@@ -421,6 +421,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // TODO: check for collateral-package status is waiting for accept
         // TODO: set status of collateral-package to waiting for generate contract
         // TODO: set status of collateral status for accepted
+        pawnShopPackageSubmittedCollaterals[_packageId][_collateralId] = CollateralSubmitPawnShopPackageStatus.ACCEPTED;
+        emit SubmitPawnShopPackage(_packageId, _collateralId, CollateralSubmitPawnShopPackageStatus.ACCEPTED);
     }
 
     function rejectCollateralOfPackage(
@@ -432,8 +434,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // TODO: check for owner of packageId
         // TODO: check for collateral-package status is waiting for accept
         // TODO: change status of collateral-package to rejected
+        pawnShopPackageSubmittedCollaterals[_packageId][_collateralId] = CollateralSubmitPawnShopPackageStatus.REJECTED;
+        emit SubmitPawnShopPackage(_packageId, _collateralId, CollateralSubmitPawnShopPackageStatus.REJECTED);
     }
-
 
     /**
     * @dev create Collateral function, collateral will be stored in this contract
