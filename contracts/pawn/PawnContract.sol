@@ -10,203 +10,17 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 
 contract PawnContract is Ownable, Pausable, ReentrancyGuard {
-    uint256 public numberCollaterals;
-    uint256 public numberOffers;
-    uint256 public numberContracts;
-    uint256 public numberPaymentHistory;
-    uint256 public numberPawnShopPackages;
-
     using SafeERC20 for ERC20;
-
-    enum CollateralStatus {OPEN, DOING, COMPLETED, CANCEL}
-    struct Collateral {
-        address owner;
-        uint256 amount;
-        address collateralAddress;
-        address loanAsset;
-        uint256 expectedDurationQty;
-        uint256 expectedDurationType;
-        CollateralStatus status;
-    }
-
-    enum PawnShopPackageStatus {ACTIVE, INACTIVE}
-    enum PawnShopPackageType {AUTO, SEMI_AUTO}
-
-    struct Range {
-        uint256 lowerBound;
-        uint256 upperBound;
-    }
-
-    struct PawnShopPackage {
-        address owner;
-        PawnShopPackageStatus status;
-        PawnShopPackageType packageType;
-        address loanToken;
-        Range loanAmountRange;
-        address[] collateralAcceptance;
-        uint256 interest;
-        uint256 durationType;
-        Range durationRange;
-        address repaymentAsset;
-        uint256 repaymentCycleType;
-        uint256 loanToValue;
-        uint256 loanToValueLiquidationThreshold;
-    }
-
-    enum OfferStatus {PENDING, ACCEPTED, COMPLETED, CANCEL}
-    enum RepaymentCycleType {WEEK, MONTH}
-    enum LoanDurationType {WEEK, MONTH}
-    enum CollateralSubmitPawnShopPackageStatus {PENDING, ACCEPTED, REJECTED, CONTRACTED, CANCEL}
-
-    struct Offer {
-        address owner;
-        uint256 collateralId;
-        address repaymentAsset;
-        uint256 loanAmount;
-        uint256 interest;
-        uint256 duration;
-        OfferStatus status;
-        LoanDurationType loanDurationType;
-        RepaymentCycleType repaymentCycleType;
-        uint256 fines;
-        uint256 risk;
-    }
-
-    enum ContractStatus {ACTIVE, COMPLETED}
-
-    struct Contract {
-        uint256 collateralId;
-        uint256 offerId;
-        uint256 pawnShopPackageId;
-        uint256 currentRepaymentPhase;
-        uint256 penalty;
-        ContractStatus status;
-        uint256 createdAt;
-    }
-
-    struct PaymentHistory {
-        uint256 contractId;
-        address payerAddress;
-        uint256 repaymentPhase;
-        uint256 payForLoan;
-        uint256 payForInterest;
-        uint256 payForFines;
-        address paymentToken;
-        uint256 createAt;
-    }
-
-    struct RepaymentPhase {
-        uint256 remainingLoan;
-        uint256 remainingInterest;
-        uint256 remainingFines;
-        uint256 paidForInterest;
-        uint256 paidForLoan;
-        uint256 paidForFines;
-        uint256 createdAt;
-        uint256 expiration;
-    }
-
-    mapping (uint256 => Offer) public offers;
-    mapping (uint256 => Collateral) public collaterals;
-    mapping (uint256 => PawnShopPackage) public pawnShopPackages;
-    mapping (uint256 => Contract) public contracts;
-    mapping (uint256 => PaymentHistory) public paymentHistories;
-    mapping (uint256 => mapping(uint256 => CollateralSubmitPawnShopPackageStatus)) public pawnShopPackageSubmittedCollaterals;
-
-    mapping (uint256 => mapping(uint256 => RepaymentPhase)) public repaymentPhases; // REMOVE
     mapping (address => uint256) whitelistCollateral;
-    mapping (address => mapping(uint256 => uint256)) public lastOffer;  // ???
-    mapping (address => uint256) systemFee; // SYSTEM FEE 
-
     address public operator; 
     uint256 public penalty; // SYSTEM PENALTY
+    mapping (address => uint256) systemFee; // SYSTEM FEE 
     uint256 public ZOOM;  
     bool public initialized = false;
     address coldWallet;
     address public admin;
-
-    event CreatePawnShopPackage(
-        uint256 packageId,
-        PawnShopPackage data
-    );
-
-    event ChangeStatusPawnShopPackage(
-        uint256 packageId,
-        PawnShopPackageStatus status         
-    );
-
-    event SubmitPawnShopPackage(
-        uint256 packageId,
-        uint256 collateralId,
-        CollateralSubmitPawnShopPackageStatus status
-    );
-
-    event CreateCollateral(
-        uint256 collateralId,
-        uint256 amount,
-        address walletAddress,
-        address cryptoAsset,
-        address expectedCryptoAssetSymbol,
-        uint256 expectedDurationQty,
-        uint256 expectedDurationType
-    );
-
-    event WithdrawCollateral(
-        uint256 collateralId,
-        address collateralOwner
-    );
-
-    event CreateOffer(
-        uint256 offerId,
-        uint256 collateralId,
-        address offerOwner,
-        address repaymentAsset,
-        address supplyCurrencyAsset,
-        uint256 loanAmount,
-        uint256 duration,
-        uint256 interest,
-        uint256 loanDurationType,
-        uint256 repaymentCycleType,
-        uint256 fines,
-        uint256 risk
-    );
-
-    event CancelOffer(
-        uint256 offerId,
-        address offerOwner
-    );
-
-    event AcceptOffer(
-        address fromAddress,
-        uint256 contractId,
-        uint256 collateralId,
-        uint256 offerId,
-        address offerOwner,
-        address collateralOwner,
-        uint256 startContract,
-        uint256 endContract
-    );
-
-    event Repayment(
-        uint256 paymentHistory,
-        uint256 contractId,
-        uint256 phase,
-        address paymentToken,
-        uint256 payForInterest,
-        uint256 payForLoan,
-        uint256 payForFines
-    );
-
-    event Liquidity(
-        address transferTo,
-        uint256 amount,
-        uint256 status
-    );
-
-    modifier notInitialized() {
-        require(!initialized, "initialized");
-        _;
-    }
+    enum RepaymentCycleType {WEEK, MONTH}
+    enum LoanDurationType {WEEK, MONTH}
 
     /**
      * @dev initialize function
@@ -248,6 +62,15 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         systemFee[_token] = _fee;
     }
 
+    function setWhitelistCollateral(address _token, uint256 _status) external onlyOperator{
+        whitelistCollateral[_token] = _status;
+    }
+
+    modifier notInitialized() {
+        require(!initialized, "initialized");
+        _;
+    }
+
     modifier onlyOperator() {
         require(operator == msg.sender, "caller is not the operator");
         _;
@@ -258,9 +81,263 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         _;
     }
 
-    function setWhitelistCollateral(address _token, uint256 _status) external onlyOperator{
-        whitelistCollateral[_token] = _status;
+    function emergencyWithdraw(address _token)
+    external onlyAdmin
+    whenPaused {
+        if (_token == address (0)) {
+            payable(coldWallet).transfer(address(this).balance);
+        } else {
+            IERC20(_token).transfer(coldWallet, IERC20(_token).balanceOf(address(this)));
+        }
     }
+
+    /** ========================= COLLATERAL FUNCTIONS & STATES ============================= */
+    uint256 public numberCollaterals;
+    mapping (uint256 => Collateral) public collaterals;
+    enum CollateralStatus {OPEN, DOING, COMPLETED, CANCEL}
+    struct Collateral {
+        address owner;
+        uint256 amount;
+        address collateralAddress;
+        address loanAsset;
+        uint256 expectedDurationQty;
+        uint256 expectedDurationType;
+        CollateralStatus status;
+    }
+
+    event CreateCollateral(
+        uint256 collateralId,
+        uint256 amount,
+        address walletAddress,
+        address cryptoAsset,
+        address expectedCryptoAssetSymbol,
+        uint256 expectedDurationQty,
+        uint256 expectedDurationType
+    );
+
+    event WithdrawCollateral(
+        uint256 collateralId,
+        address collateralOwner
+    );
+
+
+    /**
+    * @dev create Collateral function, collateral will be stored in this contract
+    * @param _collateralAddress is address of collateral
+    * @param _packageId is id of pawn shop package
+    * @param _amount is amount of token
+    * @param _loanAsset is address of loan token
+    * @param _expectedDurationQty is expected duration
+    * @param _expectedDurationType is expected duration type
+    */
+    function createCollateral(
+        address _collateralAddress,
+        int256 _packageId,
+        uint256 _amount,
+        address _loanAsset,
+        uint256 _expectedDurationQty,
+        uint256 _expectedDurationType
+    ) external whenNotPaused payable
+    returns (uint256 _idx)
+    {
+        //check whitelist collateral token
+        require(whitelistCollateral[_collateralAddress] == 1, 'not-support-collateral');
+
+        if (_collateralAddress != address(0)) {
+            // transfer to this contract
+            uint256 preCollateralBalance = ERC20(_collateralAddress).balanceOf(address(this));
+            ERC20(_collateralAddress).safeTransferFrom(msg.sender, address(this), _amount);
+            ERC20(_collateralAddress).safeTransferFrom(msg.sender, address(this), systemFee[_collateralAddress]);
+            require(ERC20(_collateralAddress).balanceOf(address(this)) - preCollateralBalance == _amount + systemFee[_collateralAddress], 'not-enough-collateral');
+        } else {
+            _amount = msg.value;
+        }
+        //id of collateral
+        _idx = numberCollaterals;
+
+        //create new collateral
+        Collateral storage newCollateral = collaterals[_idx];
+        newCollateral.owner = msg.sender;
+        newCollateral.amount = _amount;
+        newCollateral.collateralAddress = _collateralAddress;
+        newCollateral.loanAsset = _loanAsset;
+        newCollateral.status = CollateralStatus.OPEN;
+        newCollateral.expectedDurationQty = _expectedDurationQty;
+        newCollateral.expectedDurationType = _expectedDurationType;
+
+        ++numberCollaterals;
+
+        emit CreateCollateral(_idx, _amount, msg.sender, _collateralAddress, _loanAsset, _expectedDurationQty, _expectedDurationType);
+
+        if (_packageId >= 0) {
+            //package must active
+            PawnShopPackage storage pawnShopPackage = pawnShopPackages[uint256(_packageId)];
+            require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package-not-support');
+            pawnShopPackageSubmittedCollaterals[uint256(_packageId)][_idx] = CollateralSubmitPawnShopPackageStatus.PENDING;
+            emit SubmitPawnShopPackage(uint256(_packageId), _idx, CollateralSubmitPawnShopPackageStatus.PENDING);
+        }
+    }
+
+    /**
+    * @dev cancel collateral function and return back collateral
+    * @param  _collateralId is id of collateral
+    */
+    function withdrawCollateral(uint256 _collateralId) external {
+        Collateral storage collateral = collaterals[_collateralId];
+        require(collateral.owner == msg.sender, 'not-owner-of-this-collateral');
+        require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
+        for (uint256 i = 0; i < numberOffers; i++) {
+            if (offers[i].collateralId == _collateralId) {
+                offers[i].status = OfferStatus.CANCEL;
+                emit CancelOffer(i, offers[i].owner);
+            }
+        }
+        if (collateral.collateralAddress != address(0)) {
+            // transfer collateral to collateral's owner
+            require(ERC20(collateral.collateralAddress).transfer(collateral.owner, collateral.amount), 'transfer-collateral-fail');
+        } else {
+            payable(collateral.owner).transfer(collateral.amount);
+        }
+        collateral.status = CollateralStatus.CANCEL;
+        emit WithdrawCollateral(_collateralId, msg.sender);
+    }
+
+    /** ========================= OFFER FUNCTIONS & STATES ============================= */
+    uint256 public numberOffers;
+    mapping (uint256 => Offer) public offers;
+    enum OfferStatus {PENDING, ACCEPTED, COMPLETED, CANCEL}
+    struct Offer {
+        address owner;
+        uint256 collateralId;
+        address repaymentAsset;
+        uint256 loanAmount;
+        uint256 interest;
+        uint256 duration;
+        OfferStatus status;
+        LoanDurationType loanDurationType;
+        RepaymentCycleType repaymentCycleType;
+        uint256 fines;
+        uint256 risk;
+    }
+
+    event CreateOffer(
+        uint256 offerId,
+        uint256 collateralId,
+        address offerOwner,
+        address repaymentAsset,
+        address supplyCurrencyAsset,
+        uint256 loanAmount,
+        uint256 duration,
+        uint256 interest,
+        uint256 loanDurationType,
+        uint256 repaymentCycleType,
+        uint256 fines,
+        uint256 risk
+    );
+
+    event CancelOffer(
+        uint256 offerId,
+        address offerOwner
+    );
+
+    /**
+    * @dev create Collateral function, collateral will be stored in this contract
+    * @param _collateralId is id of collateral
+    * @param _repaymentAsset is address of repayment token
+    * @param _duration is duration of this offer
+    * @param _loanDurationType is type for calculating loan duration
+    * @param _repaymentCycleType is type for calculating repayment cycle
+    * @param _fines the amount payable for an overdue payment
+    * @param _risk is ratio of assets to be liquidated
+    */
+
+    function createOffer(
+        uint256 _collateralId,
+        address _repaymentAsset,
+        uint256 _loanAmount,
+        uint256 _duration,
+        uint256 _interest,
+        uint256 _loanDurationType,
+        uint256 _repaymentCycleType,
+        uint256 _fines,
+        uint256 _risk
+    )
+    external whenNotPaused
+    returns (uint256 _idx)
+    {
+        // each address can create only 1 offer
+        Collateral memory collateral = collaterals[_collateralId];
+        require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
+
+        _idx = numberOffers;
+        Offer storage newOffer = offers[_idx];
+        newOffer.collateralId = _collateralId;
+        newOffer.owner = msg.sender;
+        newOffer.repaymentAsset = _repaymentAsset;
+        newOffer.loanAmount = _loanAmount;
+        newOffer.duration = _duration;
+        newOffer.interest = _interest;
+        newOffer.loanDurationType = LoanDurationType(_loanDurationType);
+        newOffer.repaymentCycleType = RepaymentCycleType(_repaymentCycleType);
+        newOffer.fines = _fines;
+        newOffer.risk = _risk;
+        newOffer.status = OfferStatus.PENDING;
+        ++numberOffers;
+
+
+        emit CreateOffer(_idx, _collateralId, msg.sender, _repaymentAsset, collateral.loanAsset,
+            _loanAmount, _duration, _interest, _loanDurationType, _repaymentCycleType, _fines, _risk);
+    }
+
+    /**
+    * @dev cancel offer function, used for cancel offer
+    * @param  _offerId is id of offer
+    */
+    function cancelOffer(uint256 _offerId) 
+    external {
+        Offer storage offer = offers[_offerId];
+        require(offer.owner == msg.sender, 'not-owner-of-offer');
+        require(offer.status == OfferStatus.PENDING, 'offer-executed');
+        offer.status = OfferStatus.CANCEL;
+        emit CancelOffer(_offerId, msg.sender);
+    }
+
+    /** ========================= PAWNSHOP PACKAGE FUNCTIONS & STATES ============================= */
+    uint256 public numberPawnShopPackages;
+    mapping (uint256 => PawnShopPackage) public pawnShopPackages;
+
+    enum PawnShopPackageStatus {ACTIVE, INACTIVE}
+    enum PawnShopPackageType {AUTO, SEMI_AUTO}
+    struct Range {
+        uint256 lowerBound;
+        uint256 upperBound;
+    }
+
+    struct PawnShopPackage {
+        address owner;
+        PawnShopPackageStatus status;
+        PawnShopPackageType packageType;
+        address loanToken;
+        Range loanAmountRange;
+        address[] collateralAcceptance;
+        uint256 interest;
+        uint256 durationType;
+        Range durationRange;
+        address repaymentAsset;
+        uint256 repaymentCycleType;
+        uint256 loanToValue;
+        uint256 loanToValueLiquidationThreshold;
+    }
+
+    event CreatePawnShopPackage(
+        uint256 packageId,
+        PawnShopPackage data
+    );
+
+    event ChangeStatusPawnShopPackage(
+        uint256 packageId,
+        PawnShopPackageStatus status         
+    );
 
     function createPawnShopPackage(
         PawnShopPackageType _packageType,
@@ -333,62 +410,14 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit ChangeStatusPawnShopPackage(_packageId, PawnShopPackageStatus.INACTIVE);
     }
 
-    /**
-    * @dev create Collateral function, collateral will be stored in this contract
-    * @param _collateralAddress is address of collateral
-    * @param _packageId is id of pawn shop package
-    * @param _amount is amount of token
-    * @param _loanAsset is address of loan token
-    * @param _expectedDurationQty is expected duration
-    * @param _expectedDurationType is expected duration type
-    */
-    function createCollateral(
-        address _collateralAddress,
-        int256 _packageId,
-        uint256 _amount,
-        address _loanAsset,
-        uint256 _expectedDurationQty,
-        uint256 _expectedDurationType
-    ) external whenNotPaused payable
-    returns (uint256 _idx)
-    {
-        //check whitelist collateral token
-        require(whitelistCollateral[_collateralAddress] == 1, 'not-support-collateral');
-
-        if (_collateralAddress != address(0)) {
-            // transfer to this contract
-            uint256 preCollateralBalance = ERC20(_collateralAddress).balanceOf(address(this));
-            ERC20(_collateralAddress).safeTransferFrom(msg.sender, address(this), _amount);
-            ERC20(_collateralAddress).safeTransferFrom(msg.sender, address(this), systemFee[_collateralAddress]);
-            require(ERC20(_collateralAddress).balanceOf(address(this)) - preCollateralBalance == _amount + systemFee[_collateralAddress], 'not-enough-collateral');
-        } else {
-            _amount = msg.value;
-        }
-        //id of collateral
-        _idx = numberCollaterals;
-
-        //create new collateral
-        Collateral storage newCollateral = collaterals[_idx];
-        newCollateral.owner = msg.sender;
-        newCollateral.amount = _amount;
-        newCollateral.collateralAddress = _collateralAddress;
-        newCollateral.loanAsset = _loanAsset;
-        newCollateral.status = CollateralStatus.OPEN;
-        newCollateral.expectedDurationQty = _expectedDurationQty;
-        newCollateral.expectedDurationType = _expectedDurationType;
-
-        ++numberCollaterals;
-
-        emit CreateCollateral(_idx, _amount, msg.sender, _collateralAddress, _loanAsset, _expectedDurationQty, _expectedDurationType);
-
-        if (_packageId >= 0) {
-            //package must active
-            PawnShopPackage storage pawnShopPackage = pawnShopPackages[uint256(_packageId)];
-            require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package-not-support');
-            pawnShopPackageSubmittedCollaterals[uint256(_packageId)][_idx] = CollateralSubmitPawnShopPackageStatus.PENDING;
-            emit SubmitPawnShopPackage(uint256(_packageId), _idx, CollateralSubmitPawnShopPackageStatus.PENDING);
-        }
-    }
+    /** ========================= SUBMIT & ACCEPT WORKFLOW OF PAWNSHOP PACKAGE FUNCTIONS & STATES ============================= */
+    enum CollateralSubmitPawnShopPackageStatus {PENDING, ACCEPTED, REJECTED, CONTRACTED, CANCEL}
+    mapping (uint256 => mapping(uint256 => CollateralSubmitPawnShopPackageStatus)) public pawnShopPackageSubmittedCollaterals;
+    event SubmitPawnShopPackage(
+        uint256 packageId,
+        uint256 collateralId,
+        CollateralSubmitPawnShopPackageStatus status
+    );
 
     /**
     * @dev Submit Collateral to Package function, collateral will be submit to pawnshop package
@@ -439,114 +468,31 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit SubmitPawnShopPackage(_packageId, _collateralId, CollateralSubmitPawnShopPackageStatus.REJECTED);
     }
 
-    function generateContractForCollateralAndPackage(
-        uint256 _collateralId,
-        uint256 _packageId,
-        uint256 _loanAmount,
-        uint256 _exchangeRate
-    ) external whenNotPaused
-    {
-        // TODO: Implement logic
-        pawnShopPackageSubmittedCollaterals[_packageId][_collateralId] = CollateralSubmitPawnShopPackageStatus.CONTRACTED;
-        emit SubmitPawnShopPackage(_packageId, _collateralId, CollateralSubmitPawnShopPackageStatus.CONTRACTED);
+    /** ========================= CONTRACT RELATED FUNCTIONS & STATES ============================= */
+    uint256 public numberContracts;    
+    mapping (uint256 => Contract) public contracts;
+    enum ContractStatus {ACTIVE, COMPLETED}
+    struct Contract {
+        uint256 collateralId;
+        uint256 offerId;
+        uint256 pawnShopPackageId;
+        uint256 currentRepaymentPhase;
+        uint256 penalty;
+        ContractStatus status;
+        uint256 createdAt;
     }
 
-    /**
-    * @dev create Collateral function, collateral will be stored in this contract
-    * @param _collateralId is id of collateral
-    * @param _repaymentAsset is address of repayment token
-    * @param _duration is duration of this offer
-    * @param _loanDurationType is type for calculating loan duration
-    * @param _repaymentCycleType is type for calculating repayment cycle
-    * @param _fines the amount payable for an overdue payment
-    * @param _risk is ratio of assets to be liquidated
-    */
-
-    function createOffer(
-        uint256 _collateralId,
-        address _repaymentAsset,
-        uint256 _loanAmount,
-        uint256 _duration,
-        uint256 _interest,
-        uint256 _loanDurationType,
-        uint256 _repaymentCycleType,
-        uint256 _fines,
-        uint256 _risk
-    )
-    external whenNotPaused
-    returns (uint256 _idx)
-    {
-        // each address can create only 1 offer
-        Collateral memory collateral = collaterals[_collateralId];
-        require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
-
-        _idx = numberOffers;
-        Offer storage newOffer = offers[_idx];
-        newOffer.collateralId = _collateralId;
-        newOffer.owner = msg.sender;
-        newOffer.repaymentAsset = _repaymentAsset;
-        newOffer.loanAmount = _loanAmount;
-        newOffer.duration = _duration;
-        newOffer.interest = _interest;
-        newOffer.loanDurationType = LoanDurationType(_loanDurationType);
-        newOffer.repaymentCycleType = RepaymentCycleType(_repaymentCycleType);
-        newOffer.fines = _fines;
-        newOffer.risk = _risk;
-        newOffer.status = OfferStatus.PENDING;
-        ++numberOffers;
-
-
-        emit CreateOffer(_idx, _collateralId, msg.sender, _repaymentAsset, collateral.loanAsset,
-            _loanAmount, _duration, _interest, _loanDurationType, _repaymentCycleType, _fines, _risk);
-    }
-
-    /**
-    * @dev cancel offer function, used for cancel offer
-    * @param  _offerId is id of offer
-    */
-    function cancelOffer(uint256 _offerId) external {
-        Offer storage offer = offers[_offerId];
-        require(offer.owner == msg.sender, 'not-owner-of-offer');
-        require(offer.status == OfferStatus.PENDING, 'offer-executed');
-        offer.status = OfferStatus.CANCEL;
-        emit CancelOffer(_offerId, msg.sender);
-    }
-
-    /**
-    * @dev cancel collateral function and return back collateral
-    * @param  _collateralId is id of collateral
-    */
-    function withdrawCollateral(uint256 _collateralId) external {
-        Collateral storage collateral = collaterals[_collateralId];
-        require(collateral.owner == msg.sender, 'not-owner-of-this-collateral');
-        require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
-        for (uint256 i = 0; i < numberOffers; i++) {
-            if (offers[i].collateralId == _collateralId) {
-                offers[i].status = OfferStatus.CANCEL;
-                emit CancelOffer(i, offers[i].owner);
-            }
-        }
-        if (collateral.collateralAddress != address(0)) {
-            // transfer collateral to collateral's owner
-            require(ERC20(collateral.collateralAddress).transfer(collateral.owner, collateral.amount), 'transfer-collateral-fail');
-        } else {
-            payable(collateral.owner).transfer(collateral.amount);
-        }
-        collateral.status = CollateralStatus.CANCEL;
-        emit WithdrawCollateral(_collateralId, msg.sender);
-    }
-
-    function calculationOfferDuration(uint256 _offerId)
-    internal view
-    returns (uint256 duration)
-    {
-        Offer memory offer = offers[_offerId];
-        if (offer.loanDurationType == LoanDurationType.WEEK) {
-            duration = 7 * 24 * 3600 * offer.duration;
-        } else {
-            duration = 30 * 24 * 3600 * offer.duration;
-        }
-    }
+    /** ================================ 1. ACCEPT OFFER (FOR P2P WORKFLOWS) ============================= */
+    event AcceptOffer(
+        address fromAddress,
+        uint256 contractId,
+        uint256 collateralId,
+        uint256 offerId,
+        address offerOwner,
+        address collateralOwner,
+        uint256 startContract,
+        uint256 endContract
+    );
 
     /**
         * @dev accept offer and create contract between collateral and offer
@@ -580,7 +526,6 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit AcceptOffer(msg.sender, contractId, _collateralId, _offerId, offer.owner, collateral.owner, block.timestamp, block.timestamp + calculationOfferDuration(_offerId));
     }
 
-
     /**
         * @dev create contract between collateral and offer
         * @param  _collateralId is id of collateral
@@ -604,18 +549,36 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         ++numberContracts;
     }
 
-    /**
-        End lend period settlement and generate invoice for next period
-     */
+    function calculationOfferDuration(uint256 _offerId)
+    internal view
+    returns (uint256 duration)
+    {
+        Offer memory offer = offers[_offerId];
+        if (offer.loanDurationType == LoanDurationType.WEEK) {
+            duration = 7 * 24 * 3600 * offer.duration;
+        } else {
+            duration = 30 * 24 * 3600 * offer.duration;
+        }
+    }
 
+    /** ================================ 2. ACCEPT COLLATERAL (FOR PAWNSHOP PACKAGE WORKFLOWS) ============================= */
+    function generateContractForCollateralAndPackage(
+        uint256 _collateralId,
+        uint256 _packageId,
+        uint256 _loanAmount,
+        uint256 _exchangeRate
+    ) external whenNotPaused
+    {
+        // TODO: Implement logic
+        pawnShopPackageSubmittedCollaterals[_packageId][_collateralId] = CollateralSubmitPawnShopPackageStatus.CONTRACTED;
+        emit SubmitPawnShopPackage(_packageId, _collateralId, CollateralSubmitPawnShopPackageStatus.CONTRACTED);
+    }
+
+    /** ================================ 3. PAYMENT REQUEST & REPAYMENT WORKLOWS ============================= */
+    /** ===================================== 3.1. PAYMENT REQUEST ============================= */
+    mapping (uint256 => PaymentRequest[]) contractPaymentRequestMapping;
     enum PaymentRequestStatusEnum {ACTIVE, LATE, COMPLETE}
     enum PaymentRequestTypeEnum {MONTHLY, OVERDUE_MONTHLY}
-
-    event PaymentRequestEvent (
-        uint256 contractId,
-        PaymentRequest data
-    );
-
     struct PaymentRequest {
         uint256 requestId;
         PaymentRequestTypeEnum paymentRequestType;
@@ -627,9 +590,14 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 dueDateTimestamp;
         PaymentRequestStatusEnum status;
     }
+    event PaymentRequestEvent (
+        uint256 contractId,
+        PaymentRequest data
+    );
 
-    mapping (uint256 => PaymentRequest[]) contractPaymentRequestMapping;
-
+    /**
+        End lend period settlement and generate invoice for next period
+     */
     function closePaymentRequestAndStartNew(
         uint256 _contractId,
         uint256 _remainingLoan,
@@ -675,11 +643,57 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit PaymentRequestEvent(_contractId, newRequest);
     }
 
-        /**
-        * @dev repayment for pawn contract
-        * @param  _contractId is id contract
-        */
+    /** ===================================== 3.2. REPAYMENT ============================= */
+    
 
+
+    /** ================ OLD VERSION ======== */
+    uint256 public numberPaymentHistory;
+    struct PaymentHistory {
+        uint256 contractId;
+        address payerAddress;
+        uint256 repaymentPhase;
+        uint256 payForLoan;
+        uint256 payForInterest;
+        uint256 payForFines;
+        address paymentToken;
+        uint256 createAt;
+    }
+    struct RepaymentPhase {
+        uint256 remainingLoan;
+        uint256 remainingInterest;
+        uint256 remainingFines;
+        uint256 paidForInterest;
+        uint256 paidForLoan;
+        uint256 paidForFines;
+        uint256 createdAt;
+        uint256 expiration;
+    }
+
+    mapping (uint256 => PaymentHistory) public paymentHistories;
+    mapping (uint256 => mapping(uint256 => RepaymentPhase)) public repaymentPhases; // REMOVE
+    mapping (address => mapping(uint256 => uint256)) public lastOffer;  // ???
+
+    event Repayment(
+        uint256 paymentHistory,
+        uint256 contractId,
+        uint256 phase,
+        address paymentToken,
+        uint256 payForInterest,
+        uint256 payForLoan,
+        uint256 payForFines
+    );
+
+    event Liquidity(
+        address transferTo,
+        uint256 amount,
+        uint256 status
+    );
+
+    /**
+    * @dev repayment for pawn contract
+    * @param  _contractId is id contract
+    */
     function repayment(
         uint256 _contractId,
         uint256 _payForInterest,
@@ -723,11 +737,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit Repayment(historyId, _contractId, _contract.currentRepaymentPhase, offer.repaymentAsset, _payForLoan, _payForInterest, _payForFines);
     }
 
-
     /**
         * @dev create payment history function
     */
-
     function createPaymentHistory(
         uint256 _contractId,
         address _payerAddress,
@@ -807,13 +819,4 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     * @param  _token is the address of withdrawal token
     */
 
-    function emergencyWithdraw(address _token)
-    external onlyAdmin
-    whenPaused {
-        if (_token == address (0)) {
-            payable(coldWallet).transfer(address(this).balance);
-        } else {
-            IERC20(_token).transfer(coldWallet, IERC20(_token).balanceOf(address(this)));
-        }
-    }
 }
