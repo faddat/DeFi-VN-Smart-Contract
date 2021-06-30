@@ -715,26 +715,26 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         if (_payForLoan > repaymentPhase.remainingLoan) {
             _payForLoan = repaymentPhase.remainingLoan;
         }
-        if (_payForFines > repaymentPhase.remainingFines) {
-            _payForFines = repaymentPhase.remainingFines;
+        if (_payForPenalty > repaymentPhase.remainingFines) {
+            _payForPenalty = repaymentPhase.remainingFines;
         }
         repaymentPhase.remainingInterest -= _payForInterest;
         repaymentPhase.remainingLoan -= _payForLoan;
-        repaymentPhase.remainingFines -= _payForFines;
+        repaymentPhase.remainingFines -= _payForPenalty;
         repaymentPhase.paidForInterest += _payForInterest;
         repaymentPhase.paidForLoan += _payForLoan;
-        repaymentPhase.paidForFines += _payForFines;
+        repaymentPhase.paidForFines += _payForPenalty;
 
         ERC20(offer.repaymentAsset).safeTransferFrom(msg.sender, offer.owner, _payForInterest);
         ERC20(offer.repaymentAsset).safeTransferFrom(msg.sender, offer.owner, _payForLoan);
-        ERC20(offer.repaymentAsset).safeTransferFrom(msg.sender, offer.owner, _payForFines);
+        ERC20(offer.repaymentAsset).safeTransferFrom(msg.sender, offer.owner, _payForPenalty);
 
         //the borrower has paid off all the debt
         if (repaymentPhase.remainingInterest + repaymentPhase.remainingLoan+ repaymentPhase.remainingFines== 0) {
             executeLiquidity(_contractId);
         }
-        uint256 historyId = createPaymentHistory(_contractId, msg.sender, offer.repaymentAsset, _payForLoan, _payForInterest, _payForFines);
-        emit Repayment(historyId, _contractId, _contract.currentRepaymentPhase, offer.repaymentAsset, _payForLoan, _payForInterest, _payForFines);
+        uint256 historyId = createPaymentHistory(_contractId, msg.sender, offer.repaymentAsset, _payForLoan, _payForInterest, _payForPenalty);
+        emit Repayment(historyId, _contractId, _contract.currentRepaymentPhase, offer.repaymentAsset, _payForLoan, _payForInterest, _payForPenalty);
     }
 
     /**
