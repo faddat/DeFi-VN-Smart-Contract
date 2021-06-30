@@ -112,14 +112,15 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     mapping (uint256 => Contract) public contracts;
     mapping (uint256 => PaymentHistory) public paymentHistories;
     mapping (uint256 => mapping(uint256 => CollateralSubmitPawnShopPackageStatus)) public pawnShopPackageSubmittedCollaterals;
-    mapping (uint256 => mapping(uint256 => RepaymentPhase)) public repaymentPhases;
-    mapping (address => uint256) whitelistCollateral;
-    mapping (address => mapping(uint256 => uint256)) public lastOffer;
-    mapping (address => uint256) systemFee;
 
-    address public operator;
-    uint256 public penalty;
-    uint256 public ZOOM;
+    mapping (uint256 => mapping(uint256 => RepaymentPhase)) public repaymentPhases; // REMOVE
+    mapping (address => uint256) whitelistCollateral;
+    mapping (address => mapping(uint256 => uint256)) public lastOffer;  // ???
+    mapping (address => uint256) systemFee; // SYSTEM FEE 
+
+    address public operator; 
+    uint256 public penalty; // SYSTEM PENALTY
+    uint256 public ZOOM;  
     bool public initialized = false;
     address coldWallet;
     address public admin;
@@ -438,6 +439,18 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit SubmitPawnShopPackage(_packageId, _collateralId, CollateralSubmitPawnShopPackageStatus.REJECTED);
     }
 
+    function generateContractForCollateralAndPackage(
+        uint256 _collateralId,
+        uint256 _packageId,
+        uint256 _loanAmount,
+        uint256 _exchangeRate
+    ) external whenNotPaused
+    {
+        // TODO: Implement logic
+        pawnShopPackageSubmittedCollaterals[_packageId][_collateralId] = CollateralSubmitPawnShopPackageStatus.CONTRACTED;
+        emit SubmitPawnShopPackage(_packageId, _collateralId, CollateralSubmitPawnShopPackageStatus.CONTRACTED);
+    }
+
     /**
     * @dev create Collateral function, collateral will be stored in this contract
     * @param _collateralId is id of collateral
@@ -535,7 +548,6 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         }
     }
 
-
     /**
         * @dev accept offer and create contract between collateral and offer
         * @param  _collateralId is id of collateral
@@ -592,8 +604,78 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         ++numberContracts;
     }
 
-
     /**
+        End lend period settlement and generate invoice for next period
+     */
+
+    enum PaymentRequestStatusEnum {ACTIVE, LATE, COMPLETE}
+    enum PaymentRequestTypeEnum {MONTHLY, OVERDUE_MONTHLY}
+
+    event PaymentRequestEvent (
+        uint256 contractId,
+        PaymentRequest data
+    );
+
+    struct PaymentRequest {
+        uint256 requestId;
+        PaymentRequestTypeEnum paymentRequestType;
+        uint256 remainingLoan;
+        uint256 penalty;
+        uint256 interest;
+        uint256 remainingPenalty;
+        uint256 remainingInterest;
+        uint256 dueDateTimestamp;
+        PaymentRequestStatusEnum status;
+    }
+
+    mapping (uint256 => PaymentRequest[]) contractPaymentRequestMapping;
+
+    function closePaymentRequestAndStartNew(
+        uint256 _contractId,
+        uint256 _remainingLoan,
+        uint256 _nextPhrasePenalty,
+        uint256 _nextPhraseInterest,
+        uint256 _dueDateTimestamp,
+        PaymentRequestTypeEnum _paymentRequestType
+
+    ) external whenNotPaused onlyOperator {
+        // TODO: Validate
+        // - Validate time must over due date
+        // - Contract valid
+        // - Operator valid
+        // - remaining loan, valid
+
+        // Check if number of requests is 0 => create new requests, if not then update current request as LATE or COMPLETE and create new requests
+        PaymentRequest[] storage requests = contractPaymentRequestMapping[_contractId];
+        if (requests.length > 0) {
+            // not first phrase, update previous
+            // check for remaining penalty and interest, if greater than zero then is Lated, otherwise is completed
+            PaymentRequest storage previousRequest = requests[requests.length - 1];
+            if (previousRequest.remainingInterest > 0 || previousRequest.remainingPenalty > 0) {
+                previousRequest.status = PaymentRequestStatusEnum.LATE;
+            } else {
+                previousRequest.status = PaymentRequestStatusEnum.COMPLETE;
+            }
+        }
+
+        // Create new payment request and store to contract
+        PaymentRequest memory newRequest = PaymentRequest({
+            requestId: requests.length,
+            paymentRequestType: _paymentRequestType,
+            remainingLoan: _remainingLoan,
+            penalty: _nextPhrasePenalty,
+            interest: _nextPhraseInterest,
+            remainingPenalty: 0,
+            remainingInterest: 0,
+            dueDateTimestamp: _dueDateTimestamp,
+            status: PaymentRequestStatusEnum.ACTIVE
+        });
+        requests.push(newRequest);
+
+        emit PaymentRequestEvent(_contractId, newRequest);
+    }
+
+        /**
         * @dev repayment for pawn contract
         * @param  _contractId is id contract
         */
@@ -601,8 +683,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     function repayment(
         uint256 _contractId,
         uint256 _payForInterest,
-        uint256 _payForLoan,
-        uint256 _payForFines
+        uint256 _payForPenalty,
+        uint256 _payForLoan
     )
     external
     {
@@ -641,9 +723,10 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit Repayment(historyId, _contractId, _contract.currentRepaymentPhase, offer.repaymentAsset, _payForLoan, _payForInterest, _payForFines);
     }
 
+
     /**
         * @dev create payment history function
-        */
+    */
 
     function createPaymentHistory(
         uint256 _contractId,
@@ -706,37 +789,6 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         _contract.status = ContractStatus.COMPLETED;
         collateral.status = CollateralStatus.COMPLETED;
         offer.status = OfferStatus.COMPLETED;
-    }
-
-    /**
-      * @dev createRepaymentPhase is the function for Admin to calculate the amount of remaining debt as well as the interest
-      * @param  _expiration is the time that the repayment phase will end
-      */
-    function createRepaymentPhase(
-        uint256 _contractId,
-        uint256 _remainingLoan,
-        uint256 _remainingInterest,
-        uint256 _remainingFines,
-        uint256 _penalty,
-        uint256 _expiration
-    )
-    external onlyOperator
-    whenNotPaused
-    {
-        Contract storage _contract = contracts[_contractId];
-        require(_contract.status == ContractStatus.ACTIVE, 'Contract inactive');
-        if (_penalty > penalty) {
-            executeLiquidity(_contractId);
-        }
-        _contract.penalty = _penalty;
-        RepaymentPhase storage repaymentPhase = repaymentPhases[_contractId][_contract.currentRepaymentPhase];
-        repaymentPhase.remainingLoan = _remainingLoan;
-        repaymentPhase.remainingInterest = _remainingInterest;
-        repaymentPhase.remainingFines = _remainingFines;
-        repaymentPhase.paidForInterest = 0;
-        repaymentPhase.paidForLoan = 0;
-        repaymentPhase.paidForFines = 0;
-        repaymentPhase.expiration = _expiration;
     }
 
     /**
