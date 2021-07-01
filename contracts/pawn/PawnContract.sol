@@ -105,17 +105,12 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         CollateralStatus status;
     }
 
-    event CreateCollateral(
+    event CreateCollateralEvent(
         uint256 collateralId,
-        uint256 amount,
-        address walletAddress,
-        address cryptoAsset,
-        address expectedCryptoAssetSymbol,
-        uint256 expectedDurationQty,
-        uint256 expectedDurationType
+        Collateral data
     );
 
-    event WithdrawCollateral(
+    event WithdrawCollateralEvent(
         uint256 collateralId,
         address collateralOwner
     );
@@ -146,9 +141,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         if (_collateralAddress != address(0)) {
             // transfer to this contract
             uint256 preCollateralBalance = ERC20(_collateralAddress).balanceOf(address(this));
+            require(ERC20(_collateralAddress).balanceOf(address(this)) - preCollateralBalance == _amount, 'not-enough-collateral');
             ERC20(_collateralAddress).safeTransferFrom(msg.sender, address(this), _amount);
-            ERC20(_collateralAddress).safeTransferFrom(msg.sender, address(this), systemFee[_collateralAddress]);
-            require(ERC20(_collateralAddress).balanceOf(address(this)) - preCollateralBalance == _amount + systemFee[_collateralAddress], 'not-enough-collateral');
         } else {
             _amount = msg.value;
         }
@@ -167,7 +161,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         ++numberCollaterals;
 
-        emit CreateCollateral(_idx, _amount, msg.sender, _collateralAddress, _loanAsset, _expectedDurationQty, _expectedDurationType);
+        emit CreateCollateralEvent(_idx, newCollateral);
 
         if (_packageId >= 0) {
             //package must active
@@ -188,8 +182,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
         for (uint256 i = 0; i < numberOffers; i++) {
             if (offers[i].collateralId == _collateralId) {
-                offers[i].status = OfferStatus.CANCEL;
-                emit CancelOffer(i, offers[i].owner);
+                _cancelOffer(i);
             }
         }
         if (collateral.collateralAddress != address(0)) {
@@ -198,8 +191,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         } else {
             payable(collateral.owner).transfer(collateral.amount);
         }
-        collateral.status = CollateralStatus.CANCEL;
-        emit WithdrawCollateral(_collateralId, msg.sender);
+        delete collaterals[_collateralId];
+        emit WithdrawCollateralEvent(_collateralId, msg.sender);
     }
 
     /** ========================= OFFER FUNCTIONS & STATES ============================= */
@@ -216,26 +209,15 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         OfferStatus status;
         LoanDurationType loanDurationType;
         RepaymentCycleType repaymentCycleType;
-        uint256 fines;
-        uint256 risk;
+        uint256 liquidityThreshold;
     }
 
-    event CreateOffer(
+    event CreateOfferEvent(
         uint256 offerId,
-        uint256 collateralId,
-        address offerOwner,
-        address repaymentAsset,
-        address supplyCurrencyAsset,
-        uint256 loanAmount,
-        uint256 duration,
-        uint256 interest,
-        uint256 loanDurationType,
-        uint256 repaymentCycleType,
-        uint256 fines,
-        uint256 risk
+        Offer data
     );
 
-    event CancelOffer(
+    event CancelOfferEvent(
         uint256 offerId,
         address offerOwner
     );
@@ -247,7 +229,6 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     * @param _duration is duration of this offer
     * @param _loanDurationType is type for calculating loan duration
     * @param _repaymentCycleType is type for calculating repayment cycle
-    * @param _fines the amount payable for an overdue payment
     * @param _risk is ratio of assets to be liquidated
     */
 
@@ -259,8 +240,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _interest,
         uint256 _loanDurationType,
         uint256 _repaymentCycleType,
-        uint256 _fines,
-        uint256 _risk
+        uint256 _liquidityThreshold
     )
     external whenNotPaused
     returns (uint256 _idx)
@@ -273,20 +253,17 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         Offer storage newOffer = offers[_idx];
         newOffer.collateralId = _collateralId;
         newOffer.owner = msg.sender;
-        newOffer.repaymentAsset = _repaymentAsset;
         newOffer.loanAmount = _loanAmount;
-        newOffer.duration = _duration;
         newOffer.interest = _interest;
+        newOffer.duration = _duration;
         newOffer.loanDurationType = LoanDurationType(_loanDurationType);
+        newOffer.repaymentAsset = _repaymentAsset;
         newOffer.repaymentCycleType = RepaymentCycleType(_repaymentCycleType);
-        newOffer.fines = _fines;
-        newOffer.risk = _risk;
+        newOffer.liquidityThreshold = _liquidityThreshold;
         newOffer.status = OfferStatus.PENDING;
         ++numberOffers;
 
-
-        emit CreateOffer(_idx, _collateralId, msg.sender, _repaymentAsset, collateral.loanAsset,
-            _loanAmount, _duration, _interest, _loanDurationType, _repaymentCycleType, _fines, _risk);
+        emit CreateOfferEvent(_idx, newOffer);
     }
 
     /**
@@ -298,8 +275,12 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         Offer storage offer = offers[_offerId];
         require(offer.owner == msg.sender, 'not-owner-of-offer');
         require(offer.status == OfferStatus.PENDING, 'offer-executed');
-        offer.status = OfferStatus.CANCEL;
-        emit CancelOffer(_offerId, msg.sender);
+        _cancelOffer(_offerId);
+    }
+
+    function _cancelOffer(uint256 _offerId) internal {
+        emit CancelOfferEvent(_offerId, msg.sender);
+        delete offers[_offerId];
     }
 
     /** ========================= PAWNSHOP PACKAGE FUNCTIONS & STATES ============================= */
@@ -483,7 +464,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     }
 
     /** ================================ 1. ACCEPT OFFER (FOR P2P WORKFLOWS) ============================= */
-    event AcceptOffer(
+    event AcceptOfferEvent(
         address fromAddress,
         uint256 contractId,
         uint256 collateralId,
@@ -519,11 +500,11 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         for (uint256 i = 0; i < numberOffers; i++) {
             if (offers[i].collateralId == _collateralId && _offerId != i) {
                 offers[i].status = OfferStatus.CANCEL;
-                emit CancelOffer(i, offers[i].owner);
+                emit CancelOfferEvent(i, offers[i].owner);
             }
         }
 
-        emit AcceptOffer(msg.sender, contractId, _collateralId, _offerId, offer.owner, collateral.owner, block.timestamp, block.timestamp + calculationOfferDuration(_offerId));
+        emit AcceptOfferEvent(msg.sender, contractId, _collateralId, _offerId, offer.owner, collateral.owner, block.timestamp, block.timestamp + calculationOfferDuration(_offerId));
     }
 
     /**
