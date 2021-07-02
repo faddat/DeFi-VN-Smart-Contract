@@ -630,11 +630,14 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         * @param  _offerId is id of offer
         */
     function acceptOffer(uint256 _collateralId, uint256 _offerId) external whenNotPaused {
-        Offer storage offer = offers[_offerId];
         Collateral storage collateral = collaterals[_collateralId];
         require(msg.sender == collateral.owner, 'not-collateral-owner');
-        require(_collateralId == offer.collateralId, 'collateralId-not-match-offerId');
-        require(collateral.status == CollateralStatus.OPEN, '-collateral-not-open');
+        require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
+
+        CollateralOfferList storage collateralOfferList = collateralOffersMapping[_collateralId];
+        require(collateralOfferList.isInit == true, 'collateral-not-have-any-offer');
+        Offer storage offer = collateralOfferList.offerMapping[_offerId];
+        require(offer.isInit == true, 'offer-not-sent-to-collateral');
         require(offer.status == OfferStatus.PENDING, 'offer-unavailable');
 
         //transfer loan asset to collateral owner
@@ -642,16 +645,24 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         //transfer systemFee to this contract
         ERC20(collateral.loanAsset).safeTransferFrom(offer.owner, address(this), systemFee[collateral.loanAsset]);
 
+        // Revamp create contract
         uint256 contractId = createContract(_collateralId, _offerId);
         //change status of offer and collateral
         offer.status = OfferStatus.ACCEPTED;
         collateral.status = CollateralStatus.DOING;
-        for (uint256 i = 0; i < numberOffers; i++) {
-            if (offers[i].collateralId == _collateralId && _offerId != i) {
-                offers[i].status = OfferStatus.CANCEL;
-                emit CancelOfferEvent(i, offers[i].owner);
+
+        // Cancel other offer sent to this collateral
+        for (uint256 i = 0; i < collateralOfferList.offerIdList.length; i++) {
+            uint256 thisOfferId = collateralOfferList.offerIdList[i];
+            if (thisOfferId != _offerId) {
+                Offer storage thisOffer = collateralOfferList.offerMapping[thisOfferId];
+                emit CancelOfferEvent(i, _collateralId, thisOffer.owner);
+
+                delete collateralOfferList.offerMapping[thisOfferId];
             }
         }
+        delete collateralOfferList.offerIdList;
+        collateralOfferList.offerIdList.push(_offerId);
 
         emit AcceptOfferEvent(msg.sender, contractId, _collateralId, _offerId, offer.owner, collateral.owner, block.timestamp, block.timestamp + calculationOfferDuration(_offerId));
     }
