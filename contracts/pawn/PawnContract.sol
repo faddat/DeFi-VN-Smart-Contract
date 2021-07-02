@@ -400,7 +400,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     }
     struct CollateralAsLoanRequestListStruct {
         mapping (uint256 => LoanRequestStatusStruct) loanRequestToPawnShopPackageMapping; // Mapping from package to status
-        uint256[] pawnShopPackageList;
+        uint256[] pawnShopPackageIdList;
         bool isInit;
     }
     mapping (uint256 => CollateralAsLoanRequestListStruct) collateralAsLoanRequestMapping; // Map from collateral to loan request
@@ -446,7 +446,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         require(statusStruct.isInit == false, 'internal-exception:_submitCollateralToPackage - statusStruct.isInit');
         statusStruct.isInit = true;
         statusStruct.status = LoanRequestStatus.PENDING;
-        loanRequestListStruct.pawnShopPackageList.push(_packageId);
+        loanRequestListStruct.pawnShopPackageIdList.push(_packageId);
     }
 
     function withdrawCollateralFromPackage(
@@ -467,13 +467,13 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         require(loanRequestListStruct.loanRequestToPawnShopPackageMapping[_packageId].isInit == true, 'Internal Exception - statusStruct');
         delete loanRequestListStruct.loanRequestToPawnShopPackageMapping[_packageId];
 
-        for (uint i = 0; i < loanRequestListStruct.pawnShopPackageList.length - 1; i++){
-            if (loanRequestListStruct.pawnShopPackageList[i] == _packageId) {
-                loanRequestListStruct.pawnShopPackageList[i] = loanRequestListStruct.pawnShopPackageList[loanRequestListStruct.pawnShopPackageList.length - 1];
+        for (uint i = 0; i < loanRequestListStruct.pawnShopPackageIdList.length - 1; i++){
+            if (loanRequestListStruct.pawnShopPackageIdList[i] == _packageId) {
+                loanRequestListStruct.pawnShopPackageIdList[i] = loanRequestListStruct.pawnShopPackageIdList[loanRequestListStruct.pawnShopPackageIdList.length - 1];
                 break;
             }
         }
-        delete loanRequestListStruct.pawnShopPackageList[loanRequestListStruct.pawnShopPackageList - 1];
+        delete loanRequestListStruct.pawnShopPackageIdList[loanRequestListStruct.pawnShopPackageIdList - 1];
     }
 
     function acceptCollateralOfPackage(
@@ -504,16 +504,16 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         statusStruct.status = LoanRequestStatus.ACCEPTED;
 
         // Remove status of loan request between _collateralId and other packageId then emit event Cancel
-        for (uint i = 0; i < loanRequestListStruct.pawnShopPackageList.length - 1; i++) {
-            uint256 packageId = loanRequestListStruct.pawnShopPackageList[i];
+        for (uint i = 0; i < loanRequestListStruct.pawnShopPackageIdList.length - 1; i++) {
+            uint256 packageId = loanRequestListStruct.pawnShopPackageIdList[i];
             if (packageId != _packageId) {
                 // Remove status
                 delete loanRequestListStruct.loanRequestToPawnShopPackageMapping[packageId];
                 emit SubmitPawnShopPackage(packageId, _collateralId, LoanRequestStatus.CANCEL);
             }
         }
-        delete loanRequestListStruct.pawnShopPackageList;
-        loanRequestListStruct.pawnShopPackageList.push(_packageId);
+        delete loanRequestListStruct.pawnShopPackageIdList;
+        loanRequestListStruct.pawnShopPackageIdList.push(_packageId);
 
         // TODO: Remove relation of collateral and offers
     }
