@@ -574,7 +574,16 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         delete loanRequestListStruct.pawnShopPackageIdList;
         loanRequestListStruct.pawnShopPackageIdList.push(_packageId);
 
-        // TODO: Remove relation of collateral and offers
+        // Remove relation of collateral and offers
+        CollateralOfferList storage collateralOfferList = collateralOffersMapping[_collateralId];
+        if (collateralOfferList.isInit == true) {
+            for (uint i = 0; i < collateralOfferList.offerIdList.length; i ++) {
+                uint256 offerId = collateralOfferList.offerIdList[i];
+                Offer storage offer = collateralOfferList.offerMapping[offerId];
+                emit CancelOfferEvent(offerId, _collateralId, offer.owner);
+            }
+            delete collateralOffersMapping[_collateralId];
+        }
     }
 
     function rejectCollateralOfPackage(
