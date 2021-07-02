@@ -198,11 +198,16 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
     /** ========================= OFFER FUNCTIONS & STATES ============================= */
     uint256 public numberOffers;
-    mapping (uint256 => Offer) public offers;
     enum OfferStatus {PENDING, ACCEPTED, COMPLETED, CANCEL}
+    struct CollateralOfferList {
+        mapping (uint256 => Offer) offerMapping;
+        uint256[] offerIdList;
+        bool isInit;
+    }
+    mapping (uint256 => CollateralOfferList) public collateralOffersMapping;
     struct Offer {
         address owner;
-        uint256 collateralId;
+        // uint256 collateralId; // remove collateral id from offer
         address repaymentAsset;
         uint256 loanAmount;
         uint256 interest;
@@ -211,15 +216,18 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         LoanDurationType loanDurationType;
         RepaymentCycleType repaymentCycleType;
         uint256 liquidityThreshold;
+        bool isInit;
     }
 
     event CreateOfferEvent(
         uint256 offerId,
+        uint256 collateralId, // add
         Offer data
     );
 
     event CancelOfferEvent(
         uint256 offerId,
+        uint256 collateralId, // add
         address offerOwner
     );
 
@@ -249,10 +257,46 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // each address can create only 1 offer
         Collateral memory collateral = collaterals[_collateralId];
         require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
+        // validate not allow for collateral owner to create offer
+        require(collateral.owner != msg.sender, 'collateral-owner-match-sender');
 
-        _idx = numberOffers;
-        Offer storage newOffer = offers[_idx];
-        newOffer.collateralId = _collateralId;
+        Offer newOffer = _createOffer(
+            _collateralId, 
+            _repaymentAsset, 
+            _loanAmount, 
+            _duration, 
+            _interest, 
+            _loanDurationType, 
+            _repaymentCycleType, 
+            _liquidityThreshold
+        );
+
+        emit CreateOfferEvent(_idx, _collateralId, newOffer);
+    }
+
+    function _createOffer(
+        uint256 _collateralId,
+        address _repaymentAsset,
+        uint256 _loanAmount,
+        uint256 _duration,
+        uint256 _interest,
+        uint256 _loanDurationType,
+        uint256 _repaymentCycleType,
+        uint256 _liquidityThreshold
+    ) internal returns (Offer _offer) {
+        // Get offers of collateral
+        CollateralOfferList storage collateralOfferList = collateralOffersMapping[_collateralId];
+        if (!collateralOfferList.isInit) {
+            collateralOfferList.isInit = true;
+        }
+        // Create offer id       
+        uint256 _idx = numberOffers;
+
+        // Create offer data
+        Offer storage newOffer = collateralOfferList.offerMapping[_idx];
+        require (newOffer.isInit == false, 'internal-exception - _createOffer - newOffer.isInit');
+
+        newOffer.isInit = true;
         newOffer.owner = msg.sender;
         newOffer.loanAmount = _loanAmount;
         newOffer.interest = _interest;
@@ -262,26 +306,41 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         newOffer.repaymentCycleType = RepaymentCycleType(_repaymentCycleType);
         newOffer.liquidityThreshold = _liquidityThreshold;
         newOffer.status = OfferStatus.PENDING;
+
+        collateralOfferList.offerIdList.push(_idx);
+
         ++numberOffers;
 
-        emit CreateOfferEvent(_idx, newOffer);
+        return newOffer;
     }
 
     /**
     * @dev cancel offer function, used for cancel offer
     * @param  _offerId is id of offer
+    * @param _collateralId is id of collateral associated with offer
     */
-    function cancelOffer(uint256 _offerId) 
+    function cancelOffer(uint256 _offerId, uint256 _collateralId) 
     external {
-        Offer storage offer = offers[_offerId];
+        CollateralOfferList storage collateralOfferList = collateralOffersMapping[_collateralId];
+        require(collateralOfferList.isInit == true, 'collateral-not-have-any-offer');
+        Offer storage offer = collateralOfferList.offerMapping[_offerId];
+        require(offer.isInit == true, 'offer-not-sent-to-collateral');
         require(offer.owner == msg.sender, 'not-owner-of-offer');
         require(offer.status == OfferStatus.PENDING, 'offer-executed');
-        _cancelOffer(_offerId);
+        _cancelOffer(collateralOfferList);
+        emit CancelOfferEvent(_offerId, msg.sender);
     }
 
-    function _cancelOffer(uint256 _offerId) internal {
-        emit CancelOfferEvent(_offerId, msg.sender);
-        delete offers[_offerId];
+    function _cancelOffer(uint256 _offerId, CollateralOfferList _offerList) internal {
+        delete _offerList.offerMapping[_offerId];
+        for (uint i = 0; i < _offerList.offerIdList.length; i ++) {
+            if (_offerList.offerIdList[i] == _offerId) {
+                _offerList.offerIdList[i] = _offerList.offerIdList[_offerList.offerIdList.length - 1];
+                break;
+            }
+        }
+
+        delete _offerList[_offerList.offerIdList.length - 1];
     }
 
     /** ========================= PAWNSHOP PACKAGE FUNCTIONS & STATES ============================= */
