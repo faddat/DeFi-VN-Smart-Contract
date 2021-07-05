@@ -181,16 +181,23 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         Collateral storage collateral = collaterals[_collateralId];
         require(collateral.owner == msg.sender, 'not-owner-of-this-collateral');
         require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
-        for (uint256 i = 0; i < numberOffers; i++) {
-            if (offers[i].collateralId == _collateralId) {
-                _cancelOffer(i);
+
+        // Remove relation of collateral and offers
+        CollateralOfferList storage collateralOfferList = collateralOffersMapping[_collateralId];
+        if (collateralOfferList.isInit == true) {
+            for (uint i = 0; i < collateralOfferList.offerIdList.length; i ++) {
+                uint256 offerId = collateralOfferList.offerIdList[i];
+                Offer storage offer = collateralOfferList.offerMapping[offerId];
+                emit CancelOfferEvent(offerId, _collateralId, offer.owner);
             }
+            delete collateralOffersMapping[_collateralId];
         }
+
         if (collateral.collateralAddress != address(0)) {
             // transfer collateral to collateral's owner
-            require(ERC20(collateral.collateralAddress).transfer(collateral.owner, collateral.amount), 'transfer-collateral-fail');
+            require(ERC20(collateral.collateralAddress).transfer(collateral.owner, collateral.amount), 'transfer-collateral-fail');     // Carefully check for security of this
         } else {
-            payable(collateral.owner).transfer(collateral.amount);
+            payable(collateral.owner).transfer(collateral.amount);  // Carefully check for security of this
         }
         delete collaterals[_collateralId];
         emit WithdrawCollateralEvent(_collateralId, msg.sender);
@@ -328,7 +335,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         require(offer.owner == msg.sender, 'not-owner-of-offer');
         require(offer.status == OfferStatus.PENDING, 'offer-executed');
         _cancelOffer(collateralOfferList);
-        emit CancelOfferEvent(_offerId, msg.sender);
+        emit CancelOfferEvent(_offerId, _collateralId, msg.sender);
     }
 
     function _cancelOffer(uint256 _offerId, CollateralOfferList _offerList) internal {
