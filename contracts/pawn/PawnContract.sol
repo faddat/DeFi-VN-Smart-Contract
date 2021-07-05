@@ -214,7 +214,6 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     mapping (uint256 => CollateralOfferList) public collateralOffersMapping;
     struct Offer {
         address owner;
-        // uint256 collateralId; // remove collateral id from offer
         address repaymentAsset;
         uint256 loanAmount;
         uint256 interest;
@@ -228,13 +227,13 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
     event CreateOfferEvent(
         uint256 offerId,
-        uint256 collateralId, // add
+        uint256 collateralId,
         Offer data
     );
 
     event CancelOfferEvent(
         uint256 offerId,
-        uint256 collateralId, // add
+        uint256 collateralId,
         address offerOwner
     );
 
@@ -261,11 +260,11 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     external whenNotPaused
     returns (uint256 _idx)
     {
-        // each address can create only 1 offer
         Collateral memory collateral = collaterals[_collateralId];
         require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
         // validate not allow for collateral owner to create offer
         require(collateral.owner != msg.sender, 'collateral-owner-match-sender');
+        // TODO: Validate logic of offer must match with collateral: loan amount, asset, ...
 
         Offer newOffer = _createOffer(
             _collateralId, 
@@ -493,7 +492,12 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         PawnShopPackage storage pawnShopPackage = pawnShopPackages[_packageId];
         require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package-not-open');
 
-        //TODO: VALIDATE HAVEN'T SUBMIT TO PACKAGE YET
+        // VALIDATE HAVEN'T SUBMIT TO PACKAGE YET
+        CollateralAsLoanRequestListStruct storage loanRequestListStruct = collateralAsLoanRequestMapping[_collateralId];
+        if (loanRequestListStruct.isInit == true) {
+            LoanRequestStatusStruct storage statusStruct = loanRequestListStruct.loanRequestToPawnShopPackageMapping[_packageId];
+            require(statusStruct.isInit == false, 'already-submit-to-package');
+        }
 
         // Save
         _submitCollateralToPackage(_collateralId, _packageId);
@@ -547,12 +551,21 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _packageId
     ) external whenNotPaused
     {
-        // TODO: Store status of package id and collateral id for: waiting for accept, accepted, rejected
-        // TODO: check for owner of packageId
-        // TODO: check for collateral status is open
-        // TODO: check for collateral-package status is waiting for accept
-        // TODO: set status of collateral-package to waiting for generate contract
-        // TODO: set status of collateral status for accepted
+        // Check for owner of packageId
+        PawnShopPackage storage pawnShopPackage = pawnShopPackages[_packageId];
+        require(pawnShopPackage.owner == msg.sender, 'not-owner-of-this-package');
+        require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package-not-inactive');        
+        // Check for collateral status is open
+        Collateral storage collateral = collaterals[_collateralId];
+        require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
+        // Check for collateral-package status is PENDING (waiting for accept)
+        CollateralAsLoanRequestListStruct storage loanRequestListStruct = collateralAsLoanRequestMapping[_collateralId];
+        require(loanRequestListStruct.isInit == true, 'collateral-havent-had-any-loan-request');
+        LoanRequestStatusStruct storage statusStruct = loanRequestListStruct.loanRequestToPawnShopPackageMapping[_packageId];
+        require(statusStruct.isInit == true, 'collateral-havent-had-loan-request-for-this-package');
+        require(statusStruct.status == LoanRequestStatus.PENDING, 'collateral-loan-request-for-this-package-not-PENDING');
+
+        // Execute accept => change status of loan request to ACCEPTED, wait for system to generate contract
         _acceptCollateralOfPackage(_collateralId, _packageId);
         emit SubmitPawnShopPackage(_packageId, _collateralId, LoanRequestStatus.ACCEPTED);
     }
@@ -598,9 +611,20 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _packageId
     ) external whenNotPaused
     {
-        // TODO: Store status of package id and collateral id for: waiting for accept, accepted, rejected
-        // TODO: check for owner of packageId
-        // TODO: check for collateral-package status is waiting for accept
+        // Check for owner of packageId
+        PawnShopPackage storage pawnShopPackage = pawnShopPackages[_packageId];
+        require(pawnShopPackage.owner == msg.sender, 'not-owner-of-this-package');
+        require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package-not-inactive');        
+        // Check for collateral status is open
+        Collateral storage collateral = collaterals[_collateralId];
+        require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
+        // Check for collateral-package status is PENDING (waiting for accept)
+        CollateralAsLoanRequestListStruct storage loanRequestListStruct = collateralAsLoanRequestMapping[_collateralId];
+        require(loanRequestListStruct.isInit == true, 'collateral-havent-had-any-loan-request');
+        LoanRequestStatusStruct storage statusStruct = loanRequestListStruct.loanRequestToPawnShopPackageMapping[_packageId];
+        require(statusStruct.isInit == true, 'collateral-havent-had-loan-request-for-this-package');
+        require(statusStruct.status == LoanRequestStatus.PENDING, 'collateral-loan-request-for-this-package-not-PENDING');
+        
         _removeCollateralFromPackage(_collateralId, _packageId);
         emit SubmitPawnShopPackage(_packageId, _collateralId, LoanRequestStatus.REJECTED);
     }
@@ -652,7 +676,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         //transfer systemFee to this contract
         ERC20(collateral.loanAsset).safeTransferFrom(offer.owner, address(this), systemFee[collateral.loanAsset]);
 
-        // Revamp create contract
+        // TODO: Revamp create contract
         uint256 contractId = createContract(_collateralId, _offerId);
         //change status of offer and collateral
         offer.status = OfferStatus.ACCEPTED;
