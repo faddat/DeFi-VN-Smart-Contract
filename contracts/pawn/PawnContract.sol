@@ -734,15 +734,38 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     }
 
     /** ================================ 2. ACCEPT COLLATERAL (FOR PAWNSHOP PACKAGE WORKFLOWS) ============================= */
+    /**
+    * @dev create contract between package and collateral
+    * @param  _collateralId is id of collateral
+    * @param  _packageId is id of package
+    * @param  _loanAmount is number of loan amout for lend
+    * @param  _exchangeRate is exchange rate between collateral asset and loan asset, use for validate loan amount again loan to value configuration of package
+    */
     function generateContractForCollateralAndPackage(
         uint256 _collateralId,
         uint256 _packageId,
         uint256 _loanAmount,
         uint256 _exchangeRate
-    ) external whenNotPaused
+    ) external whenNotPaused onlyOperator
     {
-        // TODO: Implement logic
-        pawnShopPackageSubmittedCollaterals[_packageId][_collateralId] = LoanRequestStatus.CONTRACTED;
+        // Package must active
+        PawnShopPackage storage pawnShopPackage = pawnShopPackages[_packageId];
+        require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package-not-inactive');        
+        // Check for collateral status is DOING
+        Collateral storage collateral = collaterals[_collateralId];
+        require(collateral.status == CollateralStatus.DOING, 'collateral-not-open');
+        // Check for collateral-package status is ACCEPTED (waiting for accept)
+        CollateralAsLoanRequestListStruct storage loanRequestListStruct = collateralAsLoanRequestMapping[_collateralId];
+        require(loanRequestListStruct.isInit == true, 'collateral-havent-had-any-loan-request');
+        LoanRequestStatusStruct storage statusStruct = loanRequestListStruct.loanRequestToPawnShopPackageMapping[_packageId];
+        require(statusStruct.isInit == true, 'collateral-havent-had-loan-request-for-this-package');
+        require(statusStruct.status == LoanRequestStatus.ACCEPTED, 'collateral-loan-request-for-this-package-not-ACCEPTED');
+        // TODO: loan amount calculate from _exchangeRate must same with loan to value of package
+
+        // TODO: Create Contract
+
+        // Change status of collateral loan request to package to CONTRACTED
+        statusStruct.status == LoanRequestStatus.CONTRACTED;
         emit SubmitPawnShopPackage(_packageId, _collateralId, LoanRequestStatus.CONTRACTED);
     }
 
