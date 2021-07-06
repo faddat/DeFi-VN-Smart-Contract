@@ -140,6 +140,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         if (_collateralAddress != address(0)) {
             // transfer to this contract
+            // TODO CHECK FOR COLD WALLET, IF NOT USE => REMOVE COLD WALLET 
             uint256 preCollateralBalance = ERC20(_collateralAddress).balanceOf(address(this));
             require(ERC20(_collateralAddress).balanceOf(address(this)) - preCollateralBalance == _amount, 'not-enough-collateral');
             ERC20(_collateralAddress).safeTransferFrom(msg.sender, address(this), _amount);
@@ -195,6 +196,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         if (collateral.collateralAddress != address(0)) {
             // transfer collateral to collateral's owner
+            // TODO: CHECK FOR COLD WALLET
             require(ERC20(collateral.collateralAddress).transfer(collateral.owner, collateral.amount), 'transfer-collateral-fail');     // Carefully check for security of this
         } else {
             payable(collateral.owner).transfer(collateral.amount);  // Carefully check for security of this
@@ -839,7 +841,21 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     }
 
     /** ===================================== 3.2. REPAYMENT ============================= */
-    
+    /**
+        End lend period settlement and generate invoice for next period
+     */
+    function repayment(
+        uint256 _contractId,
+        uint256 _paidPenaltyAmount,
+        uint256 _paidInterestAmount,
+        uint256 _paidLoanAmount
+    ) external whenNotPaused {
+        // TODO: Get contract & payment request
+        // TODO: Calculate paid amount / remaining amount, if greater => get paid amount
+        // TODO: Transfer from caller (borrower) to this contract, then transfer from this contract to lender
+        // TODO: Update paid amount on payment request
+        // TODO: emit event repayment
+    }
 
 
     /** ================ OLD VERSION ======== */
