@@ -673,7 +673,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     }
 
     /** ================================ 1. ACCEPT OFFER (FOR P2P WORKFLOWS) ============================= */
-    event AcceptOfferEvent(
+    event LoanContractCreatedEvent(
         address fromAddress,
         uint256 contractId,
         Contract data
@@ -695,16 +695,14 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         require(offer.isInit == true, 'offer-not-sent-to-collateral');
         require(offer.status == OfferStatus.PENDING, 'offer-unavailable');
 
-        //transfer loan asset to collateral owner
-        ERC20(collateral.loanAsset).safeTransferFrom(offer.owner, collateral.owner, offer.loanAmount);
-        //TODO: transfer systemFee to this contract
-        // ERC20(collateral.loanAsset).safeTransferFrom(offer.owner, address(this), systemFee);
-
         uint256 contractId = createContractFromOffer(_collateralId, collateral, _offerId, offer);
         Contract storage newContract = contracts[contractId];
-        //change status of offer and collateral
+        // change status of offer and collateral
         offer.status = OfferStatus.ACCEPTED;
         collateral.status = CollateralStatus.DOING;
+
+        // transfer loan asset to collateral owner
+        ERC20(newContract.terms.loanAsset).safeTransferFrom(newContract.terms.lender, newContract.terms.borrower, newContract.terms.loanAmount);
 
         // Cancel other offer sent to this collateral
         for (uint256 i = 0; i < collateralOfferList.offerIdList.length; i++) {
@@ -719,7 +717,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         delete collateralOfferList.offerIdList;
         collateralOfferList.offerIdList.push(_offerId);
 
-        emit AcceptOfferEvent(msg.sender, contractId, newContract);
+        emit LoanContractCreatedEvent(msg.sender, contractId, newContract);
     }
 
     /**
@@ -802,13 +800,60 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         LoanRequestStatusStruct storage statusStruct = loanRequestListStruct.loanRequestToPawnShopPackageMapping[_packageId];
         require(statusStruct.isInit == true, 'collateral-havent-had-loan-request-for-this-package');
         require(statusStruct.status == LoanRequestStatus.ACCEPTED, 'collateral-loan-request-for-this-package-not-ACCEPTED');
-        // TODO: loan amount calculate from _exchangeRate must same with loan to value of package
+        // TODO: Validation loan amount calculate from _exchangeRate must same with loan to value of package
 
-        // TODO: Create Contract
+        // Create Contract
+        uint256 contractId = createContractFromPackage(_collateralId, collateral, _packageId, pawnShopPackage, _loanAmount);
+        Contract storage newContract = contracts[contractId];
+        emit LoanContractCreatedEvent(msg.sender, contractId, newContract);
+
+        // Transfer loan token from lender to borrower
+        ERC20(newContract.terms.loanAsset).safeTransferFrom(newContract.terms.lender, newContract.terms.borrower, newContract.terms.loanAmount);
 
         // Change status of collateral loan request to package to CONTRACTED
         statusStruct.status == LoanRequestStatus.CONTRACTED;
         emit SubmitPawnShopPackage(_packageId, _collateralId, LoanRequestStatus.CONTRACTED);
+    }
+
+    /**
+        * @dev create contract between collateral and offer
+        * @param  _collateralId is id of collateral
+        * @param  _packageId is id of package
+        */
+
+    function createContractFromPackage (
+        uint256 _collateralId,
+        Collateral _collateral,
+        uint256 _packageId,
+        PawnShopPackage _package,
+        uint256 _loanAmount
+    )
+    internal
+    returns (uint256 _idx)
+    {
+        _idx = numberContracts;
+        Contract storage newContract = contracts[_idx];
+        newContract.collateralId = _collateralId;
+        newContract.offerId = -1;
+        newContract.pawnShopPackageId = _packageId;
+        newContract.status = ContractStatus.ACTIVE;
+        newContract.lateCount = 0;
+        newContract.terms.borrower = _collateral.owner;
+        newContract.terms.lender = _package.owner;
+        newContract.terms.collateralAsset = _collateral.collateralAddress;
+        newContract.terms.collateralAmount = _collateral.amount;
+        newContract.terms.loanAsset = _collateral.loanAsset;
+        newContract.terms.loanAmount = _loanAmount;
+        newContract.terms.repaymentAsset = _package.repaymentAsset;
+        newContract.terms.interest = _package.interest;
+        newContract.terms.repaymentCycleType = _package.repaymentCycleType;
+        newContract.terms.liquidityThreshold = _package.loanToValueLiquidationThreshold;
+        newContract.terms.contractStartDate = block.timestamp;
+        newContract.terms.contractEndDate = block.timestamp + calculateContractDuration(_collateral.expectedDurationType, _collateral.expectedDurationQty);
+        newContract.terms.lateThreshold = lateThreshold;
+        newContract.terms.systemFeeRate = systemFeeRate;
+        newContract.terms.penaltyRate = penaltyRate;
+        ++numberContracts;
     }
 
     /** ================================ 3. PAYMENT REQUEST & REPAYMENT WORKLOWS ============================= */
@@ -896,6 +941,14 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // TODO: Transfer from caller (borrower) to this contract, then transfer from this contract to lender
         // TODO: Update paid amount on payment request
         // TODO: emit event repayment
+    }
+
+    function calculateSystemFee(
+        address token, 
+        uint256 amount, 
+        uint256 feeRate
+    ) internal returns (uint256 feeAmount) {
+
     }
 
 
