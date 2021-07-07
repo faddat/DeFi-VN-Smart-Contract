@@ -921,6 +921,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             } else {
                 previousRequest.status = PaymentRequestStatusEnum.COMPLETE;
             }
+
+            emit PaymentRequestEvent(_contractId, previousRequest);
         }
 
         // Check for liquidity
