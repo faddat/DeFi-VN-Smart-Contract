@@ -871,7 +871,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     /** ===================================== 3.1. PAYMENT REQUEST ============================= */
     mapping (uint256 => PaymentRequest[]) contractPaymentRequestMapping;
     enum PaymentRequestStatusEnum {ACTIVE, LATE, COMPLETE}
-    enum PaymentRequestTypeEnum {MONTHLY, OVERDUE_MONTHLY}
+    enum PaymentRequestTypeEnum {INTEREST, OVERDUE, LOAN}
     struct PaymentRequest {
         uint256 requestId;
         PaymentRequestTypeEnum paymentRequestType;
@@ -881,6 +881,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 remainingPenalty;
         uint256 remainingInterest;
         uint256 dueDateTimestamp;
+        bool chargePrepaidFee;
         PaymentRequestStatusEnum status;
     }
 
@@ -898,7 +899,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _nextPhrasePenalty,
         uint256 _nextPhraseInterest,
         uint256 _dueDateTimestamp,
-        PaymentRequestTypeEnum _paymentRequestType
+        PaymentRequestTypeEnum _paymentRequestType,
+        bool _chargePrepaidFee
 
     ) external whenNotPaused onlyOperator {
         // TODO: Validate
@@ -926,9 +928,11 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         }
 
         // Check for liquidity
+        // TODO: Check for last repayment finalized
         if (currentContract.terms.lateThreshold == currentContract.lateCount) {
             // TODO: Execute liquid
         } else {
+            // TODO: Check for last repayment
             // Create new payment request and store to contract
             PaymentRequest memory newRequest = PaymentRequest({
                 requestId: requests.length,
@@ -939,7 +943,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
                 remainingPenalty: _nextPhrasePenalty,
                 remainingInterest: _nextPhraseInterest,
                 dueDateTimestamp: _dueDateTimestamp,
-                status: PaymentRequestStatusEnum.ACTIVE
+                status: PaymentRequestStatusEnum.ACTIVE,
+                chargePrepaidFee: _chargePrepaidFee
             });
             requests.push(newRequest);
             emit PaymentRequestEvent(_contractId, newRequest);
