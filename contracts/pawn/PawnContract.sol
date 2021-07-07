@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for ERC20;
-    mapping (address => uint256) whitelistCollateral;
+    mapping (address => uint256) public whitelistCollateral;
     address public operator; 
     uint256 public penaltyRate;
     uint256 public systemFeeRate; 
@@ -490,7 +490,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256[] pawnShopPackageIdList;
         bool isInit;
     }
-    mapping (uint256 => CollateralAsLoanRequestListStruct) collateralAsLoanRequestMapping; // Map from collateral to loan request
+    mapping (uint256 => CollateralAsLoanRequestListStruct) public collateralAsLoanRequestMapping; // Map from collateral to loan request
     event SubmitPawnShopPackage(
         uint256 packageId,
         uint256 collateralId,
@@ -870,7 +870,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
     /** ================================ 3. PAYMENT REQUEST & REPAYMENT WORKLOWS ============================= */
     /** ===================================== 3.1. PAYMENT REQUEST ============================= */
-    mapping (uint256 => PaymentRequest[]) contractPaymentRequestMapping;
+    mapping (uint256 => PaymentRequest[]) public contractPaymentRequestMapping;
     enum PaymentRequestStatusEnum {ACTIVE, LATE, COMPLETE}
     enum PaymentRequestTypeEnum {INTEREST, OVERDUE, LOAN}
     struct PaymentRequest {
