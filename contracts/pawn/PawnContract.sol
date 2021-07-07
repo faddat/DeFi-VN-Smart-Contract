@@ -13,9 +13,10 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for ERC20;
     mapping (address => uint256) whitelistCollateral;
     address public operator; 
-    uint256 penaltyRate;
-    uint256 systemFeeRate; 
-    uint256 lateThreshold;
+    uint256 public penaltyRate;
+    uint256 public systemFeeRate; 
+    uint256 public lateThreshold;
+    uint256 public prepaidFeeRate;
     uint256 public ZOOM;  
     bool public initialized = false;
     address public admin;
@@ -70,6 +71,10 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         lateThreshold = _threshold;
     }
 
+    function setPrepaidFeeRate(uint256 _feeRate) external onlyAdmin {
+        prepaidFeeRate = _feeRate;
+    }
+
     function setWhitelistCollateral(address _token, uint256 _status) external onlyOperator{
         whitelistCollateral[_token] = _status;
     }
@@ -114,7 +119,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         address collateralAddress;
         address loanAsset;
         uint256 expectedDurationQty;
-        uint256 expectedDurationType;
+        LoanDurationType expectedDurationType;
         CollateralStatus status;
     }
 
@@ -143,7 +148,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _amount,
         address _loanAsset,
         uint256 _expectedDurationQty,
-        uint256 _expectedDurationType
+        LoanDurationType _expectedDurationType
     ) external whenNotPaused payable
     returns (uint256 _idx)
     {
@@ -279,7 +284,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // TODO: Validate logic of offer must match with collateral: loan amount, asset, ...
         // TODO: Validate ower already approve for this contract to withdraw
 
-        Offer newOffer = _createOffer(
+        Offer storage newOffer = _createOffer(
             _collateralId, 
             _repaymentAsset, 
             _loanAmount, 
@@ -302,7 +307,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _loanDurationType,
         uint256 _repaymentCycleType,
         uint256 _liquidityThreshold
-    ) internal returns (Offer _offer) {
+    ) internal returns (Offer storage _offer) {
         // Get offers of collateral
         CollateralOfferList storage collateralOfferList = collateralOffersMapping[_collateralId];
         if (!collateralOfferList.isInit) {
@@ -346,11 +351,14 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         require(offer.isInit == true, 'offer-not-sent-to-collateral');
         require(offer.owner == msg.sender, 'not-owner-of-offer');
         require(offer.status == OfferStatus.PENDING, 'offer-executed');
-        _cancelOffer(collateralOfferList);
+        _cancelOffer(_offerId, collateralOfferList);
         emit CancelOfferEvent(_offerId, _collateralId, msg.sender);
     }
 
-    function _cancelOffer(uint256 _offerId, CollateralOfferList _offerList) internal {
+    function _cancelOffer(
+        uint256 _offerId, 
+        CollateralOfferList storage _offerList
+    ) internal {
         delete _offerList.offerMapping[_offerId];
         for (uint i = 0; i < _offerList.offerIdList.length; i ++) {
             if (_offerList.offerIdList[i] == _offerId) {
@@ -359,7 +367,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             }
         }
 
-        delete _offerList[_offerList.offerIdList.length - 1];
+        delete _offerList.offerIdList[_offerList.offerIdList.length - 1];
     }
 
     /** ========================= PAWNSHOP PACKAGE FUNCTIONS & STATES ============================= */
@@ -384,7 +392,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 durationType;
         Range durationRange;
         address repaymentAsset;
-        uint256 repaymentCycleType;
+        RepaymentCycleType repaymentCycleType;
         uint256 loanToValue;
         uint256 loanToValueLiquidationThreshold;
     }
@@ -408,7 +416,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _durationType,
         Range calldata _durationRange,
         address _repaymentAsset,
-        uint256 _repaymentCycleType,
+        RepaymentCycleType _repaymentCycleType,
         uint256 _loanToValue,
         uint256 _loanToValueLiquidationThreshold
     ) external whenNotPaused
@@ -556,7 +564,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
                 break;
             }
         }
-        delete loanRequestListStruct.pawnShopPackageIdList[loanRequestListStruct.pawnShopPackageIdList - 1];
+        delete loanRequestListStruct.pawnShopPackageIdList[loanRequestListStruct.pawnShopPackageIdList.length - 1];
     }
 
     function acceptCollateralOfPackage(
@@ -653,7 +661,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 collateralAmount;
         address loanAsset;
         uint256 loanAmount;
-        uint256 repaymentAsset;
+        address repaymentAsset;
         uint256 interest;
         RepaymentCycleType repaymentCycleType;
         uint256 liquidityThreshold;
@@ -662,6 +670,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 lateThreshold;
         uint256 systemFeeRate;
         uint256 penaltyRate;
+        uint256 prepaidFeeRate;
     }
     struct Contract {
         uint256 collateralId;
@@ -728,9 +737,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
     function createContractFromOffer (
         uint256 _collateralId,
-        Collateral collateral,
+        Collateral storage _collateral,
         uint256 _offerId,
-        Offer offer
+        Offer storage _offer
     )
     internal
     returns (uint256 _idx)
@@ -738,25 +747,26 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         _idx = numberContracts;
         Contract storage newContract = contracts[_idx];
         newContract.collateralId = _collateralId;
-        newContract.offerId = _offerId;
+        newContract.offerId = int256(_offerId);
         newContract.pawnShopPackageId = -1;
         newContract.status = ContractStatus.ACTIVE;
         newContract.lateCount = 0;
-        newContract.terms.borrower = collateral.owner;
-        newContract.terms.lender = offer.owner;
-        newContract.terms.collateralAsset = collateral.collateralAddress;
-        newContract.terms.collateralAmount = collateral.amount;
-        newContract.terms.loanAsset = collateral.loanAsset;
-        newContract.terms.loanAmount = offer.loanAmount;
-        newContract.terms.repaymentAsset = offer.repaymentAsset;
-        newContract.terms.interest = offer.interest;
-        newContract.terms.repaymentCycleType = offer.repaymentCycleType;
-        newContract.terms.liquidityThreshold = offer.liquidityThreshold;
+        newContract.terms.borrower = _collateral.owner;
+        newContract.terms.lender = _offer.owner;
+        newContract.terms.collateralAsset = _collateral.collateralAddress;
+        newContract.terms.collateralAmount = _collateral.amount;
+        newContract.terms.loanAsset = _collateral.loanAsset;
+        newContract.terms.loanAmount = _offer.loanAmount;
+        newContract.terms.repaymentAsset = _offer.repaymentAsset;
+        newContract.terms.interest = _offer.interest;
+        newContract.terms.repaymentCycleType = _offer.repaymentCycleType;
+        newContract.terms.liquidityThreshold = _offer.liquidityThreshold;
         newContract.terms.contractStartDate = block.timestamp;
-        newContract.terms.contractEndDate = block.timestamp + calculateContractDuration(offer.loanDurationType, offer.duration);
+        newContract.terms.contractEndDate = block.timestamp + calculateContractDuration(_offer.loanDurationType, _offer.duration);
         newContract.terms.lateThreshold = lateThreshold;
         newContract.terms.systemFeeRate = systemFeeRate;
         newContract.terms.penaltyRate = penaltyRate;
+        newContract.terms.prepaidFeeRate = prepaidFeeRate;
         ++numberContracts;
     }
 
@@ -823,9 +833,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
     function createContractFromPackage (
         uint256 _collateralId,
-        Collateral _collateral,
+        Collateral storage _collateral,
         uint256 _packageId,
-        PawnShopPackage _package,
+        PawnShopPackage storage _package,
         uint256 _loanAmount
     )
     internal
@@ -835,7 +845,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         Contract storage newContract = contracts[_idx];
         newContract.collateralId = _collateralId;
         newContract.offerId = -1;
-        newContract.pawnShopPackageId = _packageId;
+        newContract.pawnShopPackageId = int256(_packageId);
         newContract.status = ContractStatus.ACTIVE;
         newContract.lateCount = 0;
         newContract.terms.borrower = _collateral.owner;
@@ -853,6 +863,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         newContract.terms.lateThreshold = lateThreshold;
         newContract.terms.systemFeeRate = systemFeeRate;
         newContract.terms.penaltyRate = penaltyRate;
+        newContract.terms.prepaidFeeRate = prepaidFeeRate;
         ++numberContracts;
     }
 
@@ -896,6 +907,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // - Operator valid
         // - remaining loan, valid
 
+        Contract storage currentContract = contracts[_contractId];
         // Check if number of requests is 0 => create new requests, if not then update current request as LATE or COMPLETE and create new requests
         PaymentRequest[] storage requests = contractPaymentRequestMapping[_contractId];
         if (requests.length > 0) {
@@ -904,29 +916,45 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             PaymentRequest storage previousRequest = requests[requests.length - 1];
             if (previousRequest.remainingInterest > 0 || previousRequest.remainingPenalty > 0) {
                 previousRequest.status = PaymentRequestStatusEnum.LATE;
+                // Update late counter of contract
+                currentContract.lateCount += 1;
             } else {
                 previousRequest.status = PaymentRequestStatusEnum.COMPLETE;
             }
         }
 
-        // Create new payment request and store to contract
-        PaymentRequest memory newRequest = PaymentRequest({
-            requestId: requests.length,
-            paymentRequestType: _paymentRequestType,
-            remainingLoan: _remainingLoan,
-            penalty: _nextPhrasePenalty,
-            interest: _nextPhraseInterest,
-            remainingPenalty: 0,
-            remainingInterest: 0,
-            dueDateTimestamp: _dueDateTimestamp,
-            status: PaymentRequestStatusEnum.ACTIVE
-        });
-        requests.push(newRequest);
-
-        emit PaymentRequestEvent(_contractId, newRequest);
+        // Check for liquidity
+        if (currentContract.terms.lateThreshold == currentContract.lateCount) {
+            // TODO: Execute liquid
+        } else {
+            // Create new payment request and store to contract
+            PaymentRequest memory newRequest = PaymentRequest({
+                requestId: requests.length,
+                paymentRequestType: _paymentRequestType,
+                remainingLoan: _remainingLoan, // TODO: Recheck what is best way to get remaining loan, should not get from external
+                penalty: _nextPhrasePenalty,
+                interest: _nextPhraseInterest,
+                remainingPenalty: _nextPhrasePenalty,
+                remainingInterest: _nextPhraseInterest,
+                dueDateTimestamp: _dueDateTimestamp,
+                status: PaymentRequestStatusEnum.ACTIVE
+            });
+            requests.push(newRequest);
+            emit PaymentRequestEvent(_contractId, newRequest);
+        }
     }
 
     /** ===================================== 3.2. REPAYMENT ============================= */
+    event RepaymentEvent (
+        uint256 contractId,
+        uint256 paidPenaltyAmount,
+        uint256 paidInterestAmount,
+        uint256 paidLoanAmount,
+        uint256 paidPenaltyFeeAmount,
+        uint256 paidInterestFeeAmount,
+        uint256 prepaidAmount
+    );
+
     /**
         End lend period settlement and generate invoice for next period
      */
@@ -936,11 +964,52 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _paidInterestAmount,
         uint256 _paidLoanAmount
     ) external whenNotPaused {
-        // TODO: Get contract & payment request
-        // TODO: Calculate paid amount / remaining amount, if greater => get paid amount
-        // TODO: Transfer from caller (borrower) to this contract, then transfer from this contract to lender
-        // TODO: Update paid amount on payment request
+        // TODO: Validation: Contract exists, status of contract must be active and in progress, current payment request must be in correct status
+
+        // Get contract & payment request
+        Contract storage _contract = contracts[_contractId];
+        PaymentRequest[] storage requests = contractPaymentRequestMapping[_contractId];
+        PaymentRequest storage _paymentRequest = requests[requests.length - 1];
+
+        // Calculate paid amount / remaining amount, if greater => get paid amount
+        if (_paidPenaltyAmount > _paymentRequest.remainingPenalty) {
+            _paidPenaltyAmount = _paymentRequest.remainingPenalty;
+        }
+
+        if (_paidInterestAmount > _paymentRequest.remainingInterest) {
+            _paidInterestAmount = _paymentRequest.remainingInterest;
+        }
+
+        if (_paidLoanAmount > _paymentRequest.remainingLoan) {
+            _paidLoanAmount = _paymentRequest.remainingLoan;
+        }
+
+        // Calculate fee amount based on paid amount
+        uint256 _feePenalty = calculateSystemFee(_contract.terms.repaymentAsset, _paidPenaltyAmount, _contract.terms.systemFeeRate);
+        uint256 _feeInterest = calculateSystemFee(_contract.terms.repaymentAsset, _paidInterestAmount, _contract.terms.systemFeeRate);
+        uint256 _prepaidFee = calculateSystemFee(_contract.terms.loanAsset, _paidLoanAmount, _contract.terms.prepaidFeeRate);
+
+        // TODO: Transfer from caller to borrower (include prepaid fee)
+
+        // TODO: Transfer fee from caller to this contract (penalty fee and interest fee)
+
+        // Update paid amount on payment request
+        _paymentRequest.remainingPenalty -= _paidPenaltyAmount;
+        _paymentRequest.remainingInterest -= _paidInterestAmount;
+        _paymentRequest.remainingLoan -= _paidLoanAmount;
+
+        // TODO: If remaining loan = 0 => paidoff => execute release collateral
+
         // TODO: emit event repayment
+        emit RepaymentEvent(
+            _contractId, 
+            _paidPenaltyAmount, 
+            _paidInterestAmount, 
+            _paidLoanAmount, 
+            _feePenalty, 
+            _feeInterest, 
+            _prepaidFee
+        );
     }
 
     function calculateSystemFee(
@@ -948,126 +1017,17 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 amount, 
         uint256 feeRate
     ) internal returns (uint256 feeAmount) {
-
+        // TODO:
     }
 
 
     /** ================ OLD VERSION ======== */
-    uint256 public numberPaymentHistory;
-    struct PaymentHistory {
-        uint256 contractId;
-        address payerAddress;
-        uint256 repaymentPhase;
-        uint256 payForLoan;
-        uint256 payForInterest;
-        uint256 payForFines;
-        address paymentToken;
-        uint256 createAt;
-    }
-    struct RepaymentPhase {
-        uint256 remainingLoan;
-        uint256 remainingInterest;
-        uint256 remainingFines;
-        uint256 paidForInterest;
-        uint256 paidForLoan;
-        uint256 paidForFines;
-        uint256 createdAt;
-        uint256 expiration;
-    }
-
-    mapping (uint256 => PaymentHistory) public paymentHistories;
-    mapping (uint256 => mapping(uint256 => RepaymentPhase)) public repaymentPhases; // REMOVE
-    mapping (address => mapping(uint256 => uint256)) public lastOffer;  // ???
-
-    event Repayment(
-        uint256 paymentHistory,
-        uint256 contractId,
-        uint256 phase,
-        address paymentToken,
-        uint256 payForInterest,
-        uint256 payForLoan,
-        uint256 payForFines
-    );
 
     event Liquidity(
         address transferTo,
         uint256 amount,
         uint256 status
     );
-
-    /**
-    * @dev repayment for pawn contract
-    * @param  _contractId is id contract
-    */
-    function repayment(
-        uint256 _contractId,
-        uint256 _payForInterest,
-        uint256 _payForPenalty,
-        uint256 _payForLoan
-    )
-    external
-    {
-        Contract storage _contract = contracts[_contractId];
-        RepaymentPhase storage repaymentPhase = repaymentPhases[_contractId][_contract.currentRepaymentPhase];
-        Offer storage offer = offers[_contract.offerId];
-
-        require(_contract.status == ContractStatus.ACTIVE, 'contract-inactive');
-        require(block.timestamp <= repaymentPhase.expiration, 'repayment-phase-expired');
-
-        if (_payForInterest > repaymentPhase.remainingInterest) {
-            _payForInterest = repaymentPhase.remainingInterest;
-        }
-        if (_payForLoan > repaymentPhase.remainingLoan) {
-            _payForLoan = repaymentPhase.remainingLoan;
-        }
-        if (_payForPenalty > repaymentPhase.remainingFines) {
-            _payForPenalty = repaymentPhase.remainingFines;
-        }
-        repaymentPhase.remainingInterest -= _payForInterest;
-        repaymentPhase.remainingLoan -= _payForLoan;
-        repaymentPhase.remainingFines -= _payForPenalty;
-        repaymentPhase.paidForInterest += _payForInterest;
-        repaymentPhase.paidForLoan += _payForLoan;
-        repaymentPhase.paidForFines += _payForPenalty;
-
-        ERC20(offer.repaymentAsset).safeTransferFrom(msg.sender, offer.owner, _payForInterest);
-        ERC20(offer.repaymentAsset).safeTransferFrom(msg.sender, offer.owner, _payForLoan);
-        ERC20(offer.repaymentAsset).safeTransferFrom(msg.sender, offer.owner, _payForPenalty);
-
-        //the borrower has paid off all the debt
-        if (repaymentPhase.remainingInterest + repaymentPhase.remainingLoan+ repaymentPhase.remainingFines== 0) {
-            executeLiquidity(_contractId);
-        }
-        uint256 historyId = createPaymentHistory(_contractId, msg.sender, offer.repaymentAsset, _payForLoan, _payForInterest, _payForPenalty);
-        emit Repayment(historyId, _contractId, _contract.currentRepaymentPhase, offer.repaymentAsset, _payForLoan, _payForInterest, _payForPenalty);
-    }
-
-    /**
-        * @dev create payment history function
-    */
-    function createPaymentHistory(
-        uint256 _contractId,
-        address _payerAddress,
-        address _paymentToken,
-        uint256 _payForLoan,
-        uint256 _payForInterest,
-        uint256 _payForFines
-    )
-    internal
-    returns (uint256 _idx)
-    {
-        _idx = numberPaymentHistory;
-        PaymentHistory storage payment = paymentHistories[_idx];
-        payment.contractId = _contractId;
-        payment.paymentToken = _paymentToken;
-        payment.payerAddress = _payerAddress;
-        payment.payForInterest = _payForInterest;
-        payment.payForLoan = _payForLoan;
-        payment.payForFines = _payForFines;
-        payment.createAt = block.timestamp;
-
-        ++numberPaymentHistory;
-    }
 
     /**
        * @dev executeLiquidity is function used for asset liquidation
@@ -1077,51 +1037,44 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     function executeLiquidity(uint256 _contractId)
     internal
     {
-        Contract storage _contract = contracts[_contractId];
-        Offer storage offer = offers[_contract.offerId];
-        Collateral storage collateral = collaterals[_contract.collateralId];
-        //get current status of repayment phase
-        RepaymentPhase memory repaymentPhase = repaymentPhases[_contractId][_contract.currentRepaymentPhase];
+        // Contract storage _contract = contracts[_contractId];
+        // Offer storage offer = offers[_contract.offerId];
+        // Collateral storage collateral = collaterals[_contract.collateralId];
+        // //get current status of repayment phase
+        // RepaymentPhase memory repaymentPhase = repaymentPhases[_contractId][_contract.currentRepaymentPhase];
 
-        //the borrower has paid off all the debt
-        if (repaymentPhase.remainingInterest + repaymentPhase.remainingLoan + repaymentPhase.remainingFines == 0) {
-            //transfer collateral asset back to collateral's owner
-            if (collateral.collateralAddress != address(0)) {
-                IERC20(collateral.collateralAddress).transfer(collateral.owner, collateral.amount);
-            } else {
-                payable(collateral.owner).transfer(collateral.amount);
-            }
-            emit Liquidity(collateral.owner, collateral.amount, 1);
-        } else {
-            //the borrower hasn't paid off all the debt
-            if (collateral.collateralAddress != address(0)) { // transfer collateral to offer's owner
-                IERC20(collateral.collateralAddress).transfer(offer.owner, collateral.amount);
-            } else {
-                payable(offer.owner).transfer(collateral.amount);
-            }
-            emit Liquidity(offer.owner, collateral.amount, 0);
-        }
+        // //the borrower has paid off all the debt
+        // if (repaymentPhase.remainingInterest + repaymentPhase.remainingLoan + repaymentPhase.remainingFines == 0) {
+        //     //transfer collateral asset back to collateral's owner
+        //     if (collateral.collateralAddress != address(0)) {
+        //         IERC20(collateral.collateralAddress).transfer(collateral.owner, collateral.amount);
+        //     } else {
+        //         payable(collateral.owner).transfer(collateral.amount);
+        //     }
+        //     emit Liquidity(collateral.owner, collateral.amount, 1);
+        // } else {
+        //     //the borrower hasn't paid off all the debt
+        //     if (collateral.collateralAddress != address(0)) { // transfer collateral to offer's owner
+        //         IERC20(collateral.collateralAddress).transfer(offer.owner, collateral.amount);
+        //     } else {
+        //         payable(offer.owner).transfer(collateral.amount);
+        //     }
+        //     emit Liquidity(offer.owner, collateral.amount, 0);
+        // }
 
-        //change status of contract, collateral, offer
-        _contract.status = ContractStatus.COMPLETED;
-        collateral.status = CollateralStatus.COMPLETED;
-        offer.status = OfferStatus.COMPLETED;
+        // //change status of contract, collateral, offer
+        // _contract.status = ContractStatus.COMPLETED;
+        // collateral.status = CollateralStatus.COMPLETED;
+        // offer.status = OfferStatus.COMPLETED;
     }
 
     /**
      * @dev liquidity is the function for Admin execute contract liquidation
      * @param  _contractId is the id of contract
      */
-    function liquidity(uint256 _contractId)
-    external onlyOperator
-    whenNotPaused {
-        executeLiquidity(_contractId);
-    }
-
-
-    /**
-    * @dev emergencyWithdraw is a function to be used only in emergencies
-    * @param  _token is the address of withdrawal token
-    */
-
+    // function liquidity(uint256 _contractId)
+    // external onlyOperator
+    // whenNotPaused {
+    //     executeLiquidity(_contractId);
+    // }
 }
