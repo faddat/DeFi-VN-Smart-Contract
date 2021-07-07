@@ -32,6 +32,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     ) external notInitialized {
         ZOOM = _zoom;
         initialized = true;
+        admin = address(msg.sender);
     }
 
     function setOperator(address _newOperator) onlyAdmin external {
@@ -158,8 +159,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         if (_collateralAddress != address(0)) {
             // transfer to this contract
             uint256 preCollateralBalance = ERC20(_collateralAddress).balanceOf(address(this));
-            require(ERC20(_collateralAddress).balanceOf(address(this)) - preCollateralBalance == _amount, 'not-enough-collateral');
             ERC20(_collateralAddress).safeTransferFrom(msg.sender, address(this), _amount);
+            require(ERC20(_collateralAddress).balanceOf(address(this)) - preCollateralBalance == _amount, 'not-enough-collateral');
         } else {
             _amount = msg.value;
         }
@@ -277,14 +278,14 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     external whenNotPaused
     returns (uint256 _idx)
     {
-        Collateral memory collateral = collaterals[_collateralId];
+        Collateral storage collateral = collaterals[_collateralId];
         require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
         // validate not allow for collateral owner to create offer
         require(collateral.owner != msg.sender, 'collateral-owner-match-sender');
         // TODO: Validate logic of offer must match with collateral: loan amount, asset, ...
         // TODO: Validate ower already approve for this contract to withdraw
 
-        Offer storage newOffer = _createOffer(
+        _idx = _createOffer(
             _collateralId, 
             _repaymentAsset, 
             _loanAmount, 
@@ -294,6 +295,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             _repaymentCycleType, 
             _liquidityThreshold
         );
+
+        Offer storage newOffer = collateralOffersMapping[_collateralId].offerMapping[_idx];
 
         emit CreateOfferEvent(_idx, _collateralId, newOffer);
     }
@@ -307,35 +310,33 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _loanDurationType,
         uint256 _repaymentCycleType,
         uint256 _liquidityThreshold
-    ) internal returns (Offer storage _offer) {
+    ) internal returns (uint256 _idx) {
         // Get offers of collateral
         CollateralOfferList storage collateralOfferList = collateralOffersMapping[_collateralId];
         if (!collateralOfferList.isInit) {
             collateralOfferList.isInit = true;
         }
         // Create offer id       
-        uint256 _idx = numberOffers;
+        _idx = numberOffers;
 
         // Create offer data
-        Offer storage newOffer = collateralOfferList.offerMapping[_idx];
-        require (newOffer.isInit == false, 'internal-exception - _createOffer - newOffer.isInit');
+        Offer storage _offer = collateralOfferList.offerMapping[_idx];
+        require (_offer.isInit == false, 'internal-exception - _createOffer - _offer.isInit');
 
-        newOffer.isInit = true;
-        newOffer.owner = msg.sender;
-        newOffer.loanAmount = _loanAmount;
-        newOffer.interest = _interest;
-        newOffer.duration = _duration;
-        newOffer.loanDurationType = LoanDurationType(_loanDurationType);
-        newOffer.repaymentAsset = _repaymentAsset;
-        newOffer.repaymentCycleType = RepaymentCycleType(_repaymentCycleType);
-        newOffer.liquidityThreshold = _liquidityThreshold;
-        newOffer.status = OfferStatus.PENDING;
+        _offer.isInit = true;
+        _offer.owner = msg.sender;
+        _offer.loanAmount = _loanAmount;
+        _offer.interest = _interest;
+        _offer.duration = _duration;
+        _offer.loanDurationType = LoanDurationType(_loanDurationType);
+        _offer.repaymentAsset = _repaymentAsset;
+        _offer.repaymentCycleType = RepaymentCycleType(_repaymentCycleType);
+        _offer.liquidityThreshold = _liquidityThreshold;
+        _offer.status = OfferStatus.PENDING;
 
         collateralOfferList.offerIdList.push(_idx);
 
         ++numberOffers;
-
-        return newOffer;
     }
 
     /**
