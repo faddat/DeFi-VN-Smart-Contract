@@ -7,8 +7,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-
 
 contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for ERC20;
@@ -1009,7 +1007,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         uint256 _prepaidFee = 0;
         if (_paymentRequest.chargePrepaidFee) {
-            uint256 _prepaidFee = calculateSystemFee(_paidLoanAmount, _contract.terms.prepaidFeeRate);
+            _prepaidFee = calculateSystemFee(_paidLoanAmount, _contract.terms.prepaidFeeRate);
         }
 
         if (_paidPenaltyAmount + _paidInterestAmount > 0) {
