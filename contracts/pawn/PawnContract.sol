@@ -572,7 +572,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     {
         // Check for owner of packageId
         PawnShopPackage storage pawnShopPackage = pawnShopPackages[_packageId];
-        require(pawnShopPackage.owner == msg.sender, 'not-owner-of-this-package');
+        require(pawnShopPackage.owner == msg.sender || msg.sender == operator, 'not-owner-of-this-package-or-not-operator');
         require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package-not-inactive');        
         // Check for collateral status is open
         Collateral storage collateral = collaterals[_collateralId];
