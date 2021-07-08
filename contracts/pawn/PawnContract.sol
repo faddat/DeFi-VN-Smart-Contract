@@ -519,6 +519,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // Save
         _submitCollateralToPackage(_collateralId, _packageId);
         emit SubmitPawnShopPackage(_packageId, _collateralId, LoanRequestStatus.PENDING);
+        
     }
 
     function _submitCollateralToPackage(
@@ -529,6 +530,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         if (!loanRequestListStruct.isInit) {
             loanRequestListStruct.isInit = true;
         }
+
         LoanRequestStatusStruct storage statusStruct = loanRequestListStruct.loanRequestToPawnShopPackageMapping[_packageId];
         require(statusStruct.isInit == false, 'internal-exception:_submitCollateralToPackage - statusStruct.isInit');
         statusStruct.isInit = true;
@@ -766,8 +768,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         ++numberContracts;
     }
 
-    uint256 number_seconds_per_week = 7 * 10; // 7 * 24 * 3600
-    uint256 number_seconds_per_month = 30 * 10; // 30 * 24 * 3600
+    uint256 public number_seconds_per_week = 7 * 10; // 7 * 24 * 3600
+    uint256 public number_seconds_per_month = 30 * 10; // 30 * 24 * 3600
     function calculateContractDuration(LoanDurationType durationType, uint256 duration)
     internal view
     returns (uint256 inSeconds)
@@ -777,6 +779,16 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         } else {
             inSeconds = number_seconds_per_month * duration;
         }
+    }
+
+    function setNumberSecondsPerWeek(uint256 timestamp) 
+    external onlyAdmin {
+        number_seconds_per_week = timestamp;
+    }
+
+    function setNumberSecondsPerMonth(uint256 timestamp) 
+    external onlyAdmin {
+        number_seconds_per_month = timestamp;
     }
 
     /** ================================ 2. ACCEPT COLLATERAL (FOR PAWNSHOP PACKAGE WORKFLOWS) ============================= */
@@ -1011,11 +1023,11 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         }
 
         if (_paidPenaltyAmount + _paidInterestAmount > 0) {
-            // Transfer penalty and interest to lender
-            safeTransfer(_contract.terms.repaymentAsset, msg.sender, _contract.terms.lender, _paidPenaltyAmount + _paidInterestAmount);
-            
             // Transfer fee to fee wallet
             safeTransfer(_contract.terms.repaymentAsset, msg.sender, feeWallet, _feePenalty + _feeInterest);
+
+            // Transfer penalty and interest to lender except fee amount
+            safeTransfer(_contract.terms.repaymentAsset, msg.sender, _contract.terms.lender, _paidPenaltyAmount + _paidInterestAmount - _feePenalty - _feeInterest);   
         }
 
         if (_paidLoanAmount > 0) {
