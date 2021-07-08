@@ -983,7 +983,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 paidLoanAmount,
         uint256 paidPenaltyFeeAmount,
         uint256 paidInterestFeeAmount,
-        uint256 prepaidAmount
+        uint256 prepaidAmount,
+        uint256 paymentRequestId
     );
 
     /**
@@ -1055,7 +1056,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             _paidLoanAmount, 
             _feePenalty, 
             _feeInterest, 
-            _prepaidFee
+            _prepaidFee,
+            _paymentRequest.requestId
         );
     }
 
