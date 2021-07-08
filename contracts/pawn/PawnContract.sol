@@ -600,6 +600,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // Update status of loan request between _collateralId and _packageId to Accepted
         statusStruct.status = LoanRequestStatus.ACCEPTED;
+        Collateral storage collateral = collaterals[_collateralId];
+        collateral.status = CollateralStatus.DOING;
 
         // Remove status of loan request between _collateralId and other packageId then emit event Cancel
         for (uint i = 0; i < loanRequestListStruct.pawnShopPackageIdList.length - 1; i++) {
