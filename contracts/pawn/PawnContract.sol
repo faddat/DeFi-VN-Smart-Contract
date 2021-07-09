@@ -996,7 +996,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _paidInterestAmount,
         uint256 _paidLoanAmount
     ) external whenNotPaused {
-        // TODO: Validation: Contract exists, status of contract must be active and in progress, current payment request must be in correct status
+        // TODO: Validation: Contract exists, status of contract must be active and in progress, current payment request must be in correct status, contract due date must not passed
 
         // Get contract & payment request
         Contract storage _contract = contracts[_contractId];
@@ -1068,7 +1068,12 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             // TODO: Check again the actual transfer must reduce as expected
         } else {
             // Handle ERC20
-            ERC20(asset).safeTransferFrom(from, to, amount);
+            if (from == address(this)) {
+                // transfer direct to to
+                ERC20(asset).safeTransfer(to, amount);
+            } else {
+                ERC20(asset).safeTransferFrom(from, to, amount);
+            }
 
             // TODO: Check again the actual transfer must reduce as expected
         }
