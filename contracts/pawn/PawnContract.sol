@@ -159,6 +159,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         require(whitelistCollateral[_collateralAddress] == 1, 'not-support-collateral');
         //validate: cannot use BNB as loanAsset
         require(_loanAsset != address(0), 'not-use-bnb-as-loan-asset');
+        if (_collateralAddress == address(0)) {
+            require(_amount == msg.value, 'amount-not-equal-bnb-value');
+        }
 
         //id of collateral
         _idx = numberCollaterals;
@@ -199,6 +202,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         require(collateral.owner == msg.sender, 'not-owner-of-this-collateral');
         require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
 
+        safeTransfer(collateral.collateralAddress, address(this), collateral.owner, collateral.amount);
+
         // Remove relation of collateral and offers
         CollateralOfferList storage collateralOfferList = collateralOffersMapping[_collateralId];
         if (collateralOfferList.isInit == true) {
@@ -212,8 +217,6 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         delete collaterals[_collateralId];
         emit WithdrawCollateralEvent(_collateralId, msg.sender);
-
-        safeTransfer(collateral.collateralAddress, address(this), collateral.owner, collateral.amount);
     }
 
     /** ========================= OFFER FUNCTIONS & STATES ============================= */
