@@ -912,7 +912,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         TODO: Need review logic of this function for all case
      */
     event DebugClosePaymentRequest (
-        uint256 remainingLoan
+        uint256 remainingLoan // TODO: Remove when live
     );
     function closePaymentRequestAndStartNew(
         uint256 _contractId,
@@ -942,7 +942,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
             // Validate: Due date timestamp of next payment request must not over contract due date
             require(_dueDateTimestamp <= currentContract.terms.contractEndDate, 'due-date-invalid-contract-end-date');
-            emit DebugClosePaymentRequest(previousRequest.requestId);
+            emit DebugClosePaymentRequest(previousRequest.requestId); // TODO: Remove when live
             require(_dueDateTimestamp > previousRequest.dueDateTimestamp, 'due-date-invalid-less-than-current-request');
 
             // update previous
@@ -990,7 +990,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         PaymentRequest memory newRequest = PaymentRequest({
             requestId: requests.length,
             paymentRequestType: _paymentRequestType,
-            remainingLoan: _remainingLoan, // TODO: Recheck what is best way to get remaining loan, should not get from external
+            remainingLoan: _remainingLoan,
             penalty: _nextPhrasePenalty,
             interest: _nextPhraseInterest,
             remainingPenalty: _nextPhrasePenalty,
@@ -1122,13 +1122,11 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         feeAmount = (amount * feeRate) / (ZOOM * 100);
     }
 
-    function calculateLoanAmount (
+    function calculateTokenAmountFromExchangeRate (
         uint256 exchangeRate,
-        uint256 collateralAmount,
-        uint256 loanToValue
-
-    ) internal view returns (uint256 loanAmount) {
-        return (exchangeRate * collateralAmount * loanToValue) / (100 * ZOOM * ZOOM);
+        uint256 amount
+    ) internal view returns (uint256 exchangeAmount) {
+        return (exchangeRate * amount) / ZOOM;
     }
 
     /** ===================================== 3.3. LIQUIDITY & DEFAULT ============================= */
@@ -1143,19 +1141,44 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 contractId
     );
 
+    // TODO: Remove when live
+    event DebugRiskLiquidation (
+        uint256 valueRemainingToken,
+        uint256 valueRemainingLoan,
+        uint256 valueOfCollateralLiquidationThreshold
+    );
 
     function collateralRiskLiquidationExecution(
         uint256 _contractId,
         uint256 _collateralPerRepaymentTokenExchangeRate,
         uint256 _collateralPerLoanAssetExchangeRate
-    ) external {
-        // TODO: #1
+    ) external onlyOperator {
+        // Validate: Contract must active
+        Contract storage _contract = contracts[_contractId];
+        require(_contract.status == ContractStatus.ACTIVE, 'contract-not-active');
 
-        // TODO: Validate: Contract must active
+        // Validate: sum of unpaid interest, penalty and remaining loan in value must reach liquidation threshold of collateral value
+        PaymentRequest[] storage requests = contractPaymentRequestMapping[_contractId];
+        uint256 remainingRepayment = 0; // For interest and penalty
+        uint256 remainingLoan = 0;
+        if (requests.length > 0) {
+            // Have payment request
+            PaymentRequest storage _paymentRequest = requests[requests.length - 1];
+            remainingRepayment = remainingRepayment + _paymentRequest.remainingInterest + _paymentRequest.remainingPenalty;
+            remainingLoan = _paymentRequest.remainingLoan;
+        } else {
+            // Haven't had payment request
+            remainingLoan = _contract.terms.loanAmount;
+        }
 
-        // TODO: Validate: Caller must be operator
+        uint256 valueOfRemainingRepayment = calculateTokenAmountFromExchangeRate(_collateralPerRepaymentTokenExchangeRate, remainingRepayment);
+        uint256 valueOfRemainingLoan = calculateTokenAmountFromExchangeRate(_collateralPerLoanAssetExchangeRate, remainingLoan);
+        uint256 valueOfCollateralLiquidationThreshold = _contract.terms.collateralAmount * _contract.terms.liquidityThreshold / ZOOM;
 
-        // TODO: Validate: sum of unpaid interest, penalty and remaining loan in value must reach liquidation threshold of collateral value
+        // TODO: Remove when live
+        emit DebugRiskLiquidation(valueOfRemainingRepayment, valueOfRemainingLoan, valueOfCollateralLiquidationThreshold);
+
+        require(valueOfRemainingLoan + valueOfRemainingRepayment >= valueOfCollateralLiquidationThreshold, 'collateral-not-under-liquidation-threshold');
 
         // Execute: call internal liquidation
         _liquidationExecution(_contractId, ContractLiquidedReasonType.RISK);
