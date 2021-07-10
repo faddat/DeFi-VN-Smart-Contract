@@ -938,12 +938,11 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             require(block.timestamp >= previousRequest.dueDateTimestamp, 'time-not-over-due-of-current-payment-request');
 
             // Validate: remaining loan must valid
-            uint256 calculateRemainingLoan = currentContract.terms.loanAmount - previousRequest.remainingLoan;
-            emit DebugClosePaymentRequest(calculateRemainingLoan);
-            // require(calculateRemainingLoan == _remainingLoan, 'remaining-loan-not-correct');
+            require(previousRequest.remainingLoan == _remainingLoan, 'remaining-loan-not-correct');
 
             // Validate: Due date timestamp of next payment request must not over contract due date
             require(_dueDateTimestamp <= currentContract.terms.contractEndDate, 'due-date-invalid-contract-end-date');
+            emit DebugClosePaymentRequest(previousRequest.requestId);
             require(_dueDateTimestamp > previousRequest.dueDateTimestamp, 'due-date-invalid-less-than-current-request');
 
             // update previous
@@ -1025,12 +1024,20 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _paidInterestAmount,
         uint256 _paidLoanAmount
     ) external whenNotPaused {
-        // TODO: Validation: Contract exists, status of contract must be active and in progress, current payment request must be in correct status, contract due date must not passed
-
         // Get contract & payment request
         Contract storage _contract = contracts[_contractId];
         PaymentRequest[] storage requests = contractPaymentRequestMapping[_contractId];
         PaymentRequest storage _paymentRequest = requests[requests.length - 1];
+        
+        // Validation: Contract must active
+        require(_contract.status == ContractStatus.ACTIVE, 'contract-not-active');
+
+        // Validation: current payment request must active and not over due
+        require(_paymentRequest.status == PaymentRequestStatusEnum.ACTIVE, 'current-payment-request-not-active');
+        require(block.timestamp <= _paymentRequest.dueDateTimestamp, 'current-payment-request-over-due');
+
+        // Validation: Contract must not overdue
+        require(block.timestamp <= _contract.terms.contractEndDate, 'contract-over-due');
 
         // Calculate paid amount / remaining amount, if greater => get paid amount
         if (_paidPenaltyAmount > _paymentRequest.remainingPenalty) {
