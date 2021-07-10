@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract PawnContract is Ownable, Pausable, ReentrancyGuard {
-    using SafeERC20 for ERC20;
+    using SafeERC20 for IERC20;
     mapping (address => uint256) public whitelistCollateral;
     address public operator; 
     address public feeWallet = address(this);
@@ -110,7 +110,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         if (_token == address (0)) {
             payable(address(this)).transfer(address(this).balance);
         } else {
-            IERC20(_token).transfer(address(this), IERC20(_token).balanceOf(address(this)));
+            IERC20(_token).transfer(admin, IERC20(_token).balanceOf(address(this)));
         }
     }
 
@@ -1070,9 +1070,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             // Handle ERC20
             if (from == address(this)) {
                 // transfer direct to to
-                ERC20(asset).safeTransfer(to, amount);
+                IERC20(asset).transfer(to, amount);
             } else {
-                ERC20(asset).safeTransferFrom(from, to, amount);
+                IERC20(asset).transferFrom(from, to, amount);
             }
 
             // TODO: Check again the actual transfer must reduce as expected
