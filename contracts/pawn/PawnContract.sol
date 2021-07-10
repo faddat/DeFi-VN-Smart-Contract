@@ -259,7 +259,6 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     * @param _repaymentCycleType is type for calculating repayment cycle
     * @param _liquidityThreshold is ratio of assets to be liquidated
     */
-
     function createOffer(
         uint256 _collateralId,
         address _repaymentAsset,
@@ -277,8 +276,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
         // validate not allow for collateral owner to create offer
         require(collateral.owner != msg.sender, 'collateral-owner-match-sender');
-        // TODO: Validate logic of offer must match with collateral: loan amount, asset, ...
-        // TODO: Validate ower already approve for this contract to withdraw
+        // Validate ower already approve for this contract to withdraw
+        require(IERC20(collateral.loanAsset).allowance(msg.sender, address(this)) >= _loanAmount, 'offer-owner-not-yet-approve-for-withdraw');
 
         _idx = _createOffer(
             _collateralId, 
