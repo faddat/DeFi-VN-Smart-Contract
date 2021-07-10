@@ -964,7 +964,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
             // Check for last repayment, if last repayment, all paid
             if (block.timestamp > currentContract.terms.contractEndDate) {
-                if (previousRequest.remainingInterest > 0 || previousRequest.remainingPenalty > 0 || previousRequest.remainingLoan > 0) {
+                if (previousRequest.remainingInterest + previousRequest.remainingPenalty + previousRequest.remainingLoan > 0) {
                     // unpaid => liquid
                     _liquidationExecution(_contractId, ContractLiquidedReasonType.UNPAID);
                     return;
@@ -1203,13 +1203,27 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     function notPaidFullAtEndContractLiquidation(
         uint256 _contractId
     ) external {
-        // TODO: #3
+        // Validate: Contract must active
+        Contract storage _contract = contracts[_contractId];
+        require(_contract.status == ContractStatus.ACTIVE, 'contract-not-active');
 
-        // TODO: validate: contract must active
+        // validate: current is over contract end date
+        require(block.timestamp >= _contract.terms.contractEndDate, 'contract-not-over-due');
 
-        // TODO: validate: current is over contract end date
-
-        // TODO: validate: remaining loan, interest, penalty haven't paid in full
+        // validate: remaining loan, interest, penalty haven't paid in full
+        PaymentRequest[] storage requests = contractPaymentRequestMapping[_contractId];
+        uint256 remainingRepayment = 0; // For interest and penalty
+        uint256 remainingLoan = 0;
+        if (requests.length > 0) {
+            // Have payment request
+            PaymentRequest storage _paymentRequest = requests[requests.length - 1];
+            remainingRepayment = remainingRepayment + _paymentRequest.remainingInterest + _paymentRequest.remainingPenalty;
+            remainingLoan = _paymentRequest.remainingLoan;
+        } else {
+            // Haven't had payment request
+            remainingLoan = _contract.terms.loanAmount;
+        }
+        require(remainingRepayment + remainingLoan > 0, 'contract-paid-full');
         
         // Execute: call internal liquidation
         _liquidationExecution(_contractId, ContractLiquidedReasonType.LATE);
@@ -1219,7 +1233,6 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _contractId,
         ContractLiquidedReasonType _reasonType
     ) internal {
-        // TODO: #2
         Contract storage _contract = contracts[_contractId];
 
         // Execute: calculate system fee of collateral and transfer collateral except system fee amount to lender
@@ -1266,7 +1279,6 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     function _returnCollateralToBorrowerAndCloseContract(
         uint256 _contractId
     ) internal {
-        // TODO: #4
         Contract storage _contract = contracts[_contractId];
         // Execute: Transfer collateral to borrower
         safeTransfer(_contract.terms.collateralAsset, address(this), _contract.terms.borrower, _contract.terms.collateralAmount);
@@ -1283,76 +1295,4 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit LoanContractCompletedEvent(_contractId);
         emit PaymentRequestEvent(_contractId, _lastPaymentRequest);
     }
-
-    function addMoreCollateralToContract(
-        uint256 _contractId,
-        uint256 _amount
-    ) external payable {
-         // TODO: Validate: Contract must active
-
-         // TODO: Validate: sender have enough money, check for BNB case
-
-         // TODO: Execute: Transfer money from sender to contract
-
-         // TODO: Execute: Update collateral amount, contract collateral amount
-
-         // TODO: Emit event AddMoreCollateral
-    } 
-
-    /** ================ OLD VERSION ======== */
-
-    event Liquidity(
-        address transferTo,
-        uint256 amount,
-        uint256 status
-    );
-
-    /**
-       * @dev executeLiquidity is function used for asset liquidation
-       * @param  _contractId is id contract
-       */
-
-    function executeLiquidity(uint256 _contractId)
-    internal
-    {
-        // Contract storage _contract = contracts[_contractId];
-        // Offer storage offer = offers[_contract.offerId];
-        // Collateral storage collateral = collaterals[_contract.collateralId];
-        // //get current status of repayment phase
-        // RepaymentPhase memory repaymentPhase = repaymentPhases[_contractId][_contract.currentRepaymentPhase];
-
-        // //the borrower has paid off all the debt
-        // if (repaymentPhase.remainingInterest + repaymentPhase.remainingLoan + repaymentPhase.remainingFines == 0) {
-        //     //transfer collateral asset back to collateral's owner
-        //     if (collateral.collateralAddress != address(0)) {
-        //         IERC20(collateral.collateralAddress).transfer(collateral.owner, collateral.amount);
-        //     } else {
-        //         payable(collateral.owner).transfer(collateral.amount);
-        //     }
-        //     emit Liquidity(collateral.owner, collateral.amount, 1);
-        // } else {
-        //     //the borrower hasn't paid off all the debt
-        //     if (collateral.collateralAddress != address(0)) { // transfer collateral to offer's owner
-        //         IERC20(collateral.collateralAddress).transfer(offer.owner, collateral.amount);
-        //     } else {
-        //         payable(offer.owner).transfer(collateral.amount);
-        //     }
-        //     emit Liquidity(offer.owner, collateral.amount, 0);
-        // }
-
-        // //change status of contract, collateral, offer
-        // _contract.status = ContractStatus.COMPLETED;
-        // collateral.status = CollateralStatus.COMPLETED;
-        // offer.status = OfferStatus.COMPLETED;
-    }
-
-    /**
-     * @dev liquidity is the function for Admin execute contract liquidation
-     * @param  _contractId is the id of contract
-     */
-    // function liquidity(uint256 _contractId)
-    // external onlyOperator
-    // whenNotPaused {
-    //     executeLiquidity(_contractId);
-    // }
 }
