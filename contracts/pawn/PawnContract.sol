@@ -953,7 +953,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
                 currentContract.lateCount += 1;
 
                 // Check for late threshold reach
-                if (currentContract.terms.lateThreshold == currentContract.lateCount) {
+                if (currentContract.terms.lateThreshold <= currentContract.lateCount) {
                     // Execute liquid
                     _liquidationExecution(_contractId, ContractLiquidedReasonType.LATE);
                     return;
@@ -1188,9 +1188,12 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     function lateLiquidationExecution(
         uint256 _contractId
     ) external {
-        // TODO: validate: contract must active
+        // Validate: Contract must active
+        Contract storage _contract = contracts[_contractId];
+        require(_contract.status == ContractStatus.ACTIVE, 'contract-not-active');
 
-        // TODO: validate: contract have lateCount == lateThreshold
+        // validate: contract have lateCount == lateThreshold
+        require(_contract.lateCount >= _contract.terms.lateThreshold, 'late-threshold-not-reach');
 
         // Execute: call internal liquidation
         _liquidationExecution(_contractId, ContractLiquidedReasonType.LATE);
