@@ -911,6 +911,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         End lend period settlement and generate invoice for next period
         TODO: Need review logic of this function for all case
      */
+    event DebugClosePaymentRequest (
+        uint256 remainingLoan
+    );
     function closePaymentRequestAndStartNew(
         uint256 _contractId,
         uint256 _remainingLoan,
@@ -936,7 +939,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
             // Validate: remaining loan must valid
             uint256 calculateRemainingLoan = currentContract.terms.loanAmount - previousRequest.remainingLoan;
-            require(calculateRemainingLoan == _remainingLoan, 'remaining-loan-not-correct');
+            emit DebugClosePaymentRequest(calculateRemainingLoan);
+            // require(calculateRemainingLoan == _remainingLoan, 'remaining-loan-not-correct');
 
             // Validate: Due date timestamp of next payment request must not over contract due date
             require(_dueDateTimestamp <= currentContract.terms.contractEndDate, 'due-date-invalid-contract-end-date');
