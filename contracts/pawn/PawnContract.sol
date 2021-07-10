@@ -541,7 +541,16 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _collateralId,
         uint256 _packageId
     ) external whenNotPaused {
-        //TODO: VALIDATE
+        // Collateral must OPEN
+        Collateral storage collateral = collaterals[_collateralId];
+        require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
+        // Sender is collateral owner
+        require(collateral.owner == msg.sender, 'sender-not-owner');
+        // collateral-package status must pending
+        CollateralAsLoanRequestListStruct storage loanRequestListStruct = collateralAsLoanRequestMapping[_collateralId];
+        LoanRequestStatusStruct storage loanRequestStatus = loanRequestListStruct.loanRequestToPawnShopPackageMapping[_packageId];
+        require(loanRequestStatus.status == LoanRequestStatus.PENDING, 'collateral-package-status-not-pending');
+
         _removeCollateralFromPackage(_collateralId, _packageId);
         emit SubmitPawnShopPackage(_packageId, _collateralId, LoanRequestStatus.CANCEL);
     }
