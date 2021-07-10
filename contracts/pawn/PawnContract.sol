@@ -1267,9 +1267,24 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     function claimCollateralBackToBorrower(
         uint256 _contractId
     ) external {
-        // TODO: Validate: Contract must active
+        // Validate: Contract must active
+        Contract storage _contract = contracts[_contractId];
+        require(_contract.status == ContractStatus.ACTIVE, 'contract-not-active');
 
-        // TODO: Validate: all remaining loan, interest and penalty already paid
+        // validate: remaining loan, interest, penalty did paid in full
+        PaymentRequest[] storage requests = contractPaymentRequestMapping[_contractId];
+        uint256 remainingRepayment = 0; // For interest and penalty
+        uint256 remainingLoan = 0;
+        if (requests.length > 0) {
+            // Have payment request
+            PaymentRequest storage _paymentRequest = requests[requests.length - 1];
+            remainingRepayment = remainingRepayment + _paymentRequest.remainingInterest + _paymentRequest.remainingPenalty;
+            remainingLoan = _paymentRequest.remainingLoan;
+        } else {
+            // Haven't had payment request
+            remainingLoan = _contract.terms.loanAmount;
+        }
+        require(remainingRepayment + remainingLoan == 0, 'contract-paid-full');
 
         // Execute: call internal claim function
         _returnCollateralToBorrowerAndCloseContract(_contractId);
