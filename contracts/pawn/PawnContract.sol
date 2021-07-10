@@ -828,7 +828,6 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         LoanRequestStatusStruct storage statusStruct = loanRequestListStruct.loanRequestToPawnShopPackageMapping[_packageId];
         require(statusStruct.isInit == true, 'collateral-havent-had-loan-request-for-this-package');
         require(statusStruct.status == LoanRequestStatus.ACCEPTED, 'collateral-loan-request-for-this-package-not-ACCEPTED');
-        // TODO: Validation loan amount calculate from _exchangeRate must same with loan to value of package
 
         // Create Contract
         uint256 contractId = createContractFromPackage(_collateralId, collateral, _packageId, pawnShopPackage, _loanAmount);
@@ -922,19 +921,29 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         bool _chargePrepaidFee
 
     ) external whenNotPaused onlyOperator {
-        // TODO: Validate
-        // - Validate time must over due date
-        // - Contract valid
-        // - Operator valid
-        // - remaining loan, valid
-
         Contract storage currentContract = contracts[_contractId];
+        // Validate: contract must be active
+        require(currentContract.status == ContractStatus.ACTIVE, 'contract-status-invalid');
+
         // Check if number of requests is 0 => create new requests, if not then update current request as LATE or COMPLETE and create new requests
         PaymentRequest[] storage requests = contractPaymentRequestMapping[_contractId];
         if (requests.length > 0) {
-            // not first phrase, update previous
-            // check for remaining penalty and interest, if greater than zero then is Lated, otherwise is completed
+            // not first phrase, get previous request
             PaymentRequest storage previousRequest = requests[requests.length - 1];
+            
+            // Validate: time must over due date of current payment
+            require(block.timestamp >= previousRequest.dueDateTimestamp, 'time-not-over-due-of-current-payment-request');
+
+            // Validate: remaining loan must valid
+            uint256 calculateRemainingLoan = currentContract.terms.loanAmount - previousRequest.remainingLoan;
+            require(calculateRemainingLoan == _remainingLoan, 'remaining-loan-not-correct');
+
+            // Validate: Due date timestamp of next payment request must not over contract due date
+            require(_dueDateTimestamp <= currentContract.terms.contractEndDate, 'due-date-invalid-contract-end-date');
+            require(_dueDateTimestamp > previousRequest.dueDateTimestamp, 'due-date-invalid-less-than-current-request');
+
+            // update previous
+            // check for remaining penalty and interest, if greater than zero then is Lated, otherwise is completed
             if (previousRequest.remainingInterest > 0 || previousRequest.remainingPenalty > 0) {
                 previousRequest.status = PaymentRequestStatusEnum.LATE;
                 // Update late counter of contract
@@ -964,6 +973,14 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             }
 
             emit PaymentRequestEvent(_contractId, previousRequest);
+        } else {
+            // Validate: remaining loan must valid
+            require(currentContract.terms.loanAmount == _remainingLoan, 'remaining-loan-not-correct-at-firsttime');
+
+            // Validate: Due date timestamp of next payment request must not over contract due date
+            require(_dueDateTimestamp <= currentContract.terms.contractEndDate, 'due-date-invalid-contract-end-date');
+            require(_dueDateTimestamp > currentContract.terms.contractStartDate, 'due-date-invalid-contract-start-date');
+            require(block.timestamp < _dueDateTimestamp, 'due-date-already-over');
         }
 
         // Create new payment request and store to contract
@@ -1092,6 +1109,15 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 feeRate
     ) internal view returns (uint256 feeAmount) {
         feeAmount = (amount * feeRate) / (ZOOM * 100);
+    }
+
+    function calculateLoanAmount (
+        uint256 exchangeRate,
+        uint256 collateralAmount,
+        uint256 loanToValue
+
+    ) internal view returns (uint256 loanAmount) {
+        return (exchangeRate * collateralAmount * loanToValue) / (100 * ZOOM * ZOOM);
     }
 
     /** ===================================== 3.3. LIQUIDITY & DEFAULT ============================= */
