@@ -846,7 +846,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             // Validate: Due date timestamp of next payment request must not over contract due date
             require(_dueDateTimestamp <= currentContract.terms.contractEndDate, 'due-date-invalid-contract-end-date');
             emit DebugClosePaymentRequest(previousRequest.requestId); // TODO: Remove when live
-            require(_dueDateTimestamp > previousRequest.dueDateTimestamp, 'due-date-invalid-less-than-current-request');
+            require(_dueDateTimestamp > previousRequest.dueDateTimestamp || _dueDateTimestamp == 0, 'due-date-invalid-less-than-current-request');
 
             // update previous
             // check for remaining penalty and interest, if greater than zero then is Lated, otherwise is completed
@@ -885,8 +885,15 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
             // Validate: Due date timestamp of next payment request must not over contract due date
             require(_dueDateTimestamp <= currentContract.terms.contractEndDate, 'due-date-invalid-contract-end-date');
-            require(_dueDateTimestamp > currentContract.terms.contractStartDate, 'due-date-invalid-contract-start-date');
-            require(block.timestamp < _dueDateTimestamp, 'due-date-already-over');
+            require(_dueDateTimestamp > currentContract.terms.contractStartDate || _dueDateTimestamp == 0, 'due-date-invalid-contract-start-date');
+            require(block.timestamp < _dueDateTimestamp || _dueDateTimestamp == 0, 'due-date-already-over');
+
+            // Check for last repayment, if last repayment, all paid
+            if (block.timestamp > currentContract.terms.contractEndDate) {
+                // paid full => release collateral
+                _returnCollateralToBorrowerAndCloseContract(_contractId);
+                return;
+            }
         }
 
         // Create new payment request and store to contract
@@ -930,6 +937,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // Get contract & payment request
         Contract storage _contract = contractMustActive(_contractId);
         PaymentRequest[] storage requests = contractPaymentRequestMapping[_contractId];
+        require(requests.length > 0, 'not-have-any-payment-request');
         PaymentRequest storage _paymentRequest = requests[requests.length - 1];
         
         // Validation: current payment request must active and not over due
@@ -1098,7 +1106,6 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // Execute: call internal liquidation
         _liquidationExecution(_contractId, ContractLiquidedReasonType.LATE);
-
     }
 
     function contractMustActive(uint256 _contractId) internal view returns (Contract storage _contract) {
