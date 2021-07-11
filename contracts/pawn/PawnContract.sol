@@ -105,11 +105,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     function emergencyWithdraw(address _token)
     external onlyAdmin
     whenPaused {
-        if (_token == address (0)) {
-            payable(address(this)).transfer(address(this).balance);
-        } else {
-            IERC20(_token).transfer(admin, IERC20(_token).balanceOf(address(this)));
-        }
+        safeTransfer(_token, address(this), admin, calculateAmount(_token, address(this)));
     }
 
     /** ========================= COLLATERAL FUNCTIONS & STATES ============================= */
@@ -197,7 +193,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     * @dev cancel collateral function and return back collateral
     * @param  _collateralId is id of collateral
     */
-    function withdrawCollateral(uint256 _collateralId) external {
+    function withdrawCollateral(
+        uint256 _collateralId
+    ) external whenNotPaused {
         Collateral storage collateral = collaterals[_collateralId];
         require(collateral.owner == msg.sender, 'not-owner-of-this-collateral');
         require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
@@ -272,7 +270,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _repaymentCycleType,
         uint256 _liquidityThreshold
     )
-    external whenNotPaused
+    external whenNotPaused 
     returns (uint256 _idx)
     {
         Collateral storage collateral = collaterals[_collateralId];
@@ -316,8 +314,10 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     * @param  _offerId is id of offer
     * @param _collateralId is id of collateral associated with offer
     */
-    function cancelOffer(uint256 _offerId, uint256 _collateralId) 
-    external {
+    function cancelOffer(
+        uint256 _offerId, 
+        uint256 _collateralId
+    ) external whenNotPaused {
         CollateralOfferList storage collateralOfferList = collateralOffersMapping[_collateralId];
         require(collateralOfferList.isInit == true, 'collateral-not-have-any-offer');
         Offer storage offer = collateralOfferList.offerMapping[_offerId];
@@ -513,7 +513,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     function withdrawCollateralFromPackage(
         uint256 _collateralId,
         uint256 _packageId
-    ) external {
+    ) whenNotPaused external {
         // Collateral must OPEN
         Collateral storage collateral = collaterals[_collateralId];
         require(collateral.status == CollateralStatus.OPEN, 'collateral-not-open');
@@ -1032,6 +1032,17 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         }
     }
 
+    function calculateAmount(address _token, address from) 
+    internal view returns (uint256 _amount) {
+        if (_token == address(0)) {
+            // BNB
+            _amount = from.balance;
+        } else {
+            // ERC20
+            _amount = IERC20(_token).balanceOf(from);
+        }
+    }
+
     function calculateSystemFee(
         uint256 amount, 
         uint256 feeRate
@@ -1062,7 +1073,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _contractId,
         uint256 _collateralPerRepaymentTokenExchangeRate,
         uint256 _collateralPerLoanAssetExchangeRate
-    ) external onlyOperator {
+    ) external whenNotPaused onlyOperator {
         // Validate: Contract must active
         Contract storage _contract = contractMustActive(_contractId);
 
@@ -1081,7 +1092,11 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
     }
 
-    function calculateRemainingLoanAndRepaymentFromContract(uint256 _contractId, Contract storage _contract) internal view returns (uint256 remainingRepayment, uint256 remainingLoan) {
+    function calculateRemainingLoanAndRepaymentFromContract(
+        uint256 _contractId,
+        Contract storage _contract
+    ) internal view 
+    returns (uint256 remainingRepayment, uint256 remainingLoan) {
         // Validate: sum of unpaid interest, penalty and remaining loan in value must reach liquidation threshold of collateral value
         PaymentRequest[] storage requests = contractPaymentRequestMapping[_contractId];
         if (requests.length > 0) {
@@ -1108,7 +1123,10 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         _liquidationExecution(_contractId, ContractLiquidedReasonType.LATE);
     }
 
-    function contractMustActive(uint256 _contractId) internal view returns (Contract storage _contract) {
+    function contractMustActive(
+        uint256 _contractId
+    ) internal view 
+    returns (Contract storage _contract) {
         // Validate: Contract must active
         _contract = contracts[_contractId];
         require(_contract.status == ContractStatus.ACTIVE, 'contract-not-active');
@@ -1116,7 +1134,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
     function notPaidFullAtEndContractLiquidation(
         uint256 _contractId
-    ) external {
+    ) external whenNotPaused {
         Contract storage _contract = contractMustActive(_contractId);
         // validate: current is over contract end date
         require(block.timestamp >= _contract.terms.contractEndDate, 'contract-not-over-due');
