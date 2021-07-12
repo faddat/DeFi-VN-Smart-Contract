@@ -722,7 +722,6 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         uint256 _exchangeRate
     ) external whenNotPaused onlyOperator
     {
-        // TODO: Temporary disable for release 1.0
         // Package must active
         PawnShopPackage storage pawnShopPackage = pawnShopPackages[_packageId];
         require(pawnShopPackage.status == PawnShopPackageStatus.ACTIVE, 'package');        
