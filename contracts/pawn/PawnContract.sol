@@ -698,9 +698,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     returns (uint256 inSeconds)
     {
         if (durationType == LoanDurationType.WEEK) {
-            inSeconds = 7 * 24 * 3600 * duration;
+            inSeconds = 600 * duration; //  7 * 24 * 3600
         } else {
-            inSeconds = 30 * 24 * 3600 * duration;
+            inSeconds = 900 * duration; // 30 * 24 * 3600
         }
     }
 
@@ -939,12 +939,14 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         require(requests.length > 0, 'payment-request');
         PaymentRequest storage _paymentRequest = requests[requests.length - 1];
         
-        // Validation: current payment request must active and not over due
-        require(_paymentRequest.status == PaymentRequestStatusEnum.ACTIVE, 'not-active');
-        require(block.timestamp <= _paymentRequest.dueDateTimestamp, 'over-due');
-
         // Validation: Contract must not overdue
         require(block.timestamp <= _contract.terms.contractEndDate, 'contract-over');
+
+        // Validation: current payment request must active and not over due
+        require(_paymentRequest.status == PaymentRequestStatusEnum.ACTIVE, 'not-active');
+        if (_paidPenaltyAmount + _paidInterestAmount > 0) {
+            require(block.timestamp <= _paymentRequest.dueDateTimestamp, 'over-due');
+        }
 
         // Calculate paid amount / remaining amount, if greater => get paid amount
         if (_paidPenaltyAmount > _paymentRequest.remainingPenalty) {
