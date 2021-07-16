@@ -997,7 +997,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
     function safeTransfer(address asset, address from, address to, uint256 amount) internal {
         if (asset == address(0)) {
-            require(from.balance == amount, 'not-enough-balance');
+            require(from.balance >= amount, 'not-enough-balance');
             // Handle BNB            
             if (to == address(this)) {
                 // Send to this contract
@@ -1084,10 +1084,11 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         if (requests.length > 0) {
             // Have payment request
             PaymentRequest storage _paymentRequest = requests[requests.length - 1];
-            remainingRepayment = remainingRepayment + _paymentRequest.remainingInterest + _paymentRequest.remainingPenalty;
+            remainingRepayment = _paymentRequest.remainingInterest + _paymentRequest.remainingPenalty;
             remainingLoan = _paymentRequest.remainingLoan;
         } else {
             // Haven't had payment request
+            remainingRepayment = 0;
             remainingLoan = _contract.terms.loanAmount;
         }
     }
