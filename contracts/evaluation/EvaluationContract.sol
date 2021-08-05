@@ -4,13 +4,19 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+// import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./DFY-1155.sol";
 
 contract AssetEvaluation is ERC1155Holder {
     using Counters for Counters.Counter;
+    
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     Counters.Counter public totalAssets;
 
-    IERC1155 public DFY1155;
+    DFY1155 public dfy1155;
+
+    // Assuming _assetBaseUri = "https://ipfs.io/ipfs/"
 
     string private _assetBaseUri;
     address public contractAdmin;
@@ -21,14 +27,15 @@ contract AssetEvaluation is ERC1155Holder {
     // assetId => Evaluation[]
     mapping(uint => Evaluation[]) public EvaluationsByAsset;
 
-    enum AssetStatus {CREATED, OPEN, EVALUATED, EVALUATION_APPROVED, NFT_CREATED}
+    // evaluator address => has minter role
+    mapping(address => bool) public WhiteListedEvaluator;
+
+    // TODO: reduce status to Open, Evaluated, NFT_created
+    enum AssetStatus {OPEN, EVALUATED, NFT_CREATED}
 
     struct Asset {
-        string assetExtId;
         string assetDataCID;
         address creator;
-        // bool isEvaluated;
-        // bool isEvaluationApproved;
         AssetStatus status;
     }
 
@@ -36,32 +43,28 @@ contract AssetEvaluation is ERC1155Holder {
 
     struct Evaluation {
         address evaluator;
-        uint price;
+        address token;
+        uint price;        
         EvaluationStatus status;
     }
 
-    event AssetCreationSuccessful(
-        address creator,
+    event AssetCreated (
         uint assetId,
-        string cid,
-        AssetStatus status
+        Asset asset
     );
-    event AssetEvaluationSuccessful(
-        address creator,
-        address evaluator,
+    event AssetEvaluated(
         uint assetId,
-        string cid,
-        AssetStatus status
-    );
-    event EvaluationApprovalSuccessful(
-        address creator,
-        address evaluator,
-        uint price
+        Asset asset,
+        Evaluation evaluation
     );
     event NftCreationSuccessful(
         address creator,
         uint tokenID,
+        string cid,
         AssetStatus status
+    );
+    event WhiteListEvaluatorRegistrationSuccessful(
+        address evaluator
     );
 
     modifier OnlyAdmin() {
@@ -76,7 +79,7 @@ contract AssetEvaluation is ERC1155Holder {
         contractAdmin = msg.sender;
         _setAssetBaseURI(_uri);
 
-        DFY1155 = IERC1155(_dfy1155_contract_address);
+        dfy1155 = DFY1155(_dfy1155_contract_address);
     }
 
     function _setAssetBaseURI(string memory _uri) internal {
@@ -88,6 +91,10 @@ contract AssetEvaluation is ERC1155Holder {
         return _assetBaseUri;
     }
 
+    function assetURI(address _creator, uint _assetId) external view returns (string memory) {
+        return bytes(_assetBaseUri).length > 0 ? string(abi.encodePacked(_assetBaseUri, assetList[_creator][_assetId].assetDataCID)) : "";
+    }
+
     // function ChangeNftContractAddress(address _newAddress) external OnlyAdmin returns (bool) {}
 
     /**
@@ -95,18 +102,17 @@ contract AssetEvaluation is ERC1155Holder {
     * @dev msg.sender is the asset creator's address
     */
 
-    function CreateAssetRequest(string memory _assetExtId,string memory _cid) external {
+    function CreateAssetRequest(string memory _cid) external {
         // TODO: Require validation of msg.sender
 
         uint _assetId = totalAssets.current();
         assetList[msg.sender][_assetId] = Asset({
-                                                assetExtId: _assetExtId,
                                                 assetDataCID: _cid,
                                                 creator: msg.sender,
-                                                status: AssetStatus.CREATED
+                                                status: AssetStatus.OPEN
                                             });
 
-        emit AssetCreationSuccessful(msg.sender, _assetId, _cid, AssetStatus.CREATED);
+        emit AssetCreated(_assetId, assetList[msg.sender][_assetId]);
 
         totalAssets.increment();
     }
@@ -114,36 +120,53 @@ contract AssetEvaluation is ERC1155Holder {
     /**
     * @dev Asset evaluation by evaluator
     * @dev msg.sender is evaluator address
+    * @param _assetId is the ID of the asset in AssetList
+    * @param _currency is address of the token who create the asset
+    * @param _price value of the asset, given by the Evaluator
     */
+    function EvaluateAsset(uint _assetId, address _currency, uint _price) external {
+        // TODO
+        // Require validation of msg.sender
+        // Require msg.sender must be Whitelisted
+        // Require validation of asset via _assetId
 
-    function EvaluateAsset(address _creator, uint _assetId, uint _price) external {
-        // TODO: Require validation of msg.sender
-
-        Asset storage _asset = assetList[_creator][_assetId];
+        uint _nextEvaluation = EvaluationsByAsset[_assetId].length;
         
-        Evaluation memory _evaluation = Evaluation({
-                                    evaluator: msg.sender,
-                                    price: _price,
-                                    status: EvaluationStatus.CREATED
-                                });
-
         // Add evaluation data to mapping
-        EvaluationsByAsset[_assetId].push(_evaluation);
+        EvaluationsByAsset[_assetId][_nextEvaluation] = Evaluation({
+                                                            evaluator: msg.sender,
+                                                            token: _currency,
+                                                            price: _price,
+                                                            status: EvaluationStatus.CREATED
+                                                        });
 
-        _asset.status = AssetStatus.EVALUATED;
+        // Evaluation memory _evaluation = Evaluation({
+        //                             evaluator: msg.sender,
+        //                             token: _currency,
+        //                             price: _price,
+        //                             status: EvaluationStatus.CREATED
+        //                         });
+        
+        // Add evaluation data to mapping
+        // EvaluationsByAsset[_assetId].push(_evaluation);
 
-        emit AssetEvaluationSuccessful(_creator, msg.sender, _assetId, _asset.assetDataCID, _asset.status);
+        // _asset.status = AssetStatus.EVALUATED;
+
+        // emit EvaluationSentSuccessful(_creator, msg.sender, _assetId, _asset.assetDataCID, _asset.status);
     }
 
     /** 
     * @dev Customer accept evaluation data from evaluator
+    * @param _creator is address of the Customer who create the asset
+    * @param _assetId is the ID of the asset in AssetList
+    * @param _evaluationIndex is the look up index of the Evaluation data in EvaluationsByAsset list
     */
-
     function AcceptEvaluation(address _creator, uint _assetId, uint _evaluationIndex) external {
         Asset storage _asset = assetList[_creator][_assetId];
         
         // approve an evaluation by looking for its index in the array.
-        EvaluationsByAsset[_assetId][_evaluationIndex].status = EvaluationStatus.APPROVED;
+        Evaluation storage _evaluation = EvaluationsByAsset[_assetId][_evaluationIndex];
+        _evaluation.status = EvaluationStatus.APPROVED;
         
         // reject all other evaluation
         for(uint i = 0; i < EvaluationsByAsset[_assetId].length; i++) {
@@ -152,38 +175,66 @@ contract AssetEvaluation is ERC1155Holder {
             }
         }
 
-        _asset.status = AssetStatus.EVALUATION_APPROVED;
+        _asset.status = AssetStatus.EVALUATED;
 
-        emit EvaluationApprovalSuccessful(_creator, EvaluationsByAsset[_assetId][_evaluationIndex].evaluator, EvaluationsByAsset[_assetId][_evaluationIndex].price);
+        // emit AssetEvaluated(
+        //     _evaluationIndex,
+        //     _creator, 
+        //     EvaluationsByAsset[_assetId][_evaluationIndex].evaluator, 
+        //     EvaluationsByAsset[_assetId][_evaluationIndex].price
+        // );
 
-        // TODO: Mint token NFT
-
-        // grant minter role to Evaluator whose evaluation data has been approved
-        // DFY1155. EvaluationsByAsset[_assetId][_evaluationIndex].evaluator
-        
+        emit AssetEvaluated(_assetId, _asset, _evaluation);
     }
 
+    modifier OnlyMinter() {
+        require(dfy1155.hasRole(MINTER_ROLE, msg.sender), "Only Minter can mint");
+        _;
+    }
     /**
     * @dev After an evaluation is approved, the Evaluator who submit
     * @dev evaluation data will call this function to generate an NFT token
+    * @dev and transfer its ownership to Asset Creator's address.
+    *
+    * @param _creator is the customer address who created the asset
+    * @param _assetId is the ID of the asset being converted to NFT token
+    * @param _evaluationIndex is the look up index of the Evaluation data in the EvaluationsByAsset list
     */
-    
-    function CreateNftToken() external {
 
+    function CreateNftToken(address _creator, uint _assetId, uint _evaluationIndex) external OnlyMinter {
+        Evaluation memory evaluation = EvaluationsByAsset[_assetId][_evaluationIndex];
+
+        require(msg.sender == evaluation.evaluator, "Evaluator address does not match");
+
+        Asset storage asset = assetList[_creator][_assetId];
+
+        uint mintedTokenId = dfy1155.mint(_creator, 1, asset.assetDataCID, "");
+
+        asset.status = AssetStatus.NFT_CREATED;
+
+        emit NftCreationSuccessful(_creator, mintedTokenId, asset.assetDataCID, asset.status);
     }
 
     /**
-    * @dev Add an Evaluator to Whitelist
+    * @dev Add an Evaluator to Whitelist and grant him Minter role.
+    * @param _evaluator is the address of an Evaluator
     */
 
-    function AddEvaluator(address _evaluator) external {
+    function AddEvaluator(address _evaluator) external OnlyAdmin {
+        WhiteListedEvaluator[_evaluator] = true;
 
+        // Grant Minter role to evaluator
+        dfy1155.grantRole(MINTER_ROLE, _evaluator);
+
+        // Approve
+
+        emit WhiteListEvaluatorRegistrationSuccessful(_evaluator);
     }
 
     /** 
     * @dev Remove an Evaluator from Whitelist
     */
-    function RemoveEvaluator(address _evaluator) external {
+    function RemoveEvaluator(address _evaluator) external OnlyAdmin{
 
     }
 
