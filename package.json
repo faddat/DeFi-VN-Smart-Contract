@@ -21,6 +21,7 @@
   "homepage": "https://github.com/defi-vn/DeFi-VN-Smart-Contract#readme",
   "dependencies": {
     "@openzeppelin/contracts": "^4.1.0",
+    "@openzeppelin/contracts-upgradeable": "^4.2.0",
     "@truffle/hdwallet-provider": "^1.2.1",
     "@vittominacori/erc20-token": "^1.2.3",
     "dotenv": "^8.2.0",
