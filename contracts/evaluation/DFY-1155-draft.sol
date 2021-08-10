@@ -24,22 +24,6 @@ contract DFY1155 is ERC1155Upgradeable, DFYAccessControl, PausableUpgradeable, E
 
     // Assuming baseURI = "https://ipfs.io/ipfs/"
 
-    // constructor(
-    //     string memory _name,
-    //     string memory _symbol,
-    //     string memory _uri
-    // ) ERC1155("") {
-    //     name = _name;
-    //     symbol = _symbol;
-
-    //     _setBaseURI(_uri);
-
-    //     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    //     _setupRole(URI_SETTER_ROLE, msg.sender);
-    //     _setupRole(PAUSER_ROLE, msg.sender);
-    //     _setupRole(MINTER_ROLE, msg.sender);
-    // }
-
     function initialize(
         string memory _name,
         string memory _symbol,
