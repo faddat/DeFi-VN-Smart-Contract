@@ -1341,9 +1341,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     returns (uint256 inSeconds)
     {
         if (durationType == LoanDurationType.WEEK) {
-            inSeconds = 600 * duration; //  7 * 24 * 3600
+            inSeconds = 7 * 24 * 3600 * duration; //  7 * 24 * 3600
         } else {
-            inSeconds = 900 * duration; // 30 * 24 * 3600
+            inSeconds = 30 * 24 * 3600 * duration; // 30 * 24 * 3600
         }
     }
 
