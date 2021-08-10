@@ -1875,4 +1875,5 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // Update status of loan request
         statusStruct.status = LoanRequestStatus.PENDING;
         collateral.status = CollateralStatus.OPEN;
+    }
 }
