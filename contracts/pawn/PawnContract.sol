@@ -1186,4 +1186,49 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // Execute: Transfer collateral to borrower
         safeTransfer(_contract.terms.collateralAsset, address(this), _contract.terms.borrower, _contract.terms.collateralAmount);
     }
+
+    function findContractOfCollateral(
+        uint256 _collateralId,
+        uint256 _contractStart,
+        uint256 _contractEnd
+    ) external view returns (int256 _idx) {
+        _idx = -1;
+        uint256 endIdx = _contractEnd;
+        if (_contractEnd >= numberContracts - 1) {
+            endIdx = numberContracts - 1;
+        }
+        for (uint i = _contractStart; i < endIdx; i ++) {
+            Contract storage mContract = contracts[i];
+            if (mContract.collateralId == _collateralId) {
+                _idx = int256(i);
+                break;
+            }
+        }
+    }
+    
+    function releaseTrappedCollateralLockedWithoutContract(
+        uint256 _collateralId,
+        uint256 _packageId
+    ) external onlyAdmin {
+        // Validate: Collateral must Doing
+        Collateral storage collateral = collaterals[_collateralId];
+        require(collateral.status == CollateralStatus.DOING, 'collateral');
+
+        // Check for collateral not being in any contract
+        for (uint i = 0; i < numberContracts - 1; i ++) {
+            Contract storage mContract = contracts[i];
+            require(mContract.collateralId != _collateralId, 'collatera-in-contract');
+        }
+
+        // Check for collateral-package status is ACCEPTED
+        CollateralAsLoanRequestListStruct storage loanRequestListStruct = collateralAsLoanRequestMapping[_collateralId];
+        require(loanRequestListStruct.isInit == true, 'collateral-loan-request');
+        LoanRequestStatusStruct storage statusStruct = loanRequestListStruct.loanRequestToPawnShopPackageMapping[_packageId];
+        require(statusStruct.isInit == true, 'collateral-loan-request-package');
+        require(statusStruct.status == LoanRequestStatus.ACCEPTED, 'not-ACCEPTED');
+
+        // Update status of loan request
+        statusStruct.status = LoanRequestStatus.PENDING;
+        collateral.status = CollateralStatus.OPEN;
+    }
 }
