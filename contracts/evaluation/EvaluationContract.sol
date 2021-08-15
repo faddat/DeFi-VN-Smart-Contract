@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpg
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/Math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./DFY-AccessControl.sol";
 import "./DFY-1155-draft.sol";
@@ -15,6 +16,7 @@ import "./DFY-1155-draft.sol";
 contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAccessControl {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using AddressUpgradeable for address;
+    using SafeMathUpgradeable for uint;
     
     CountersUpgradeable.Counter public totalAssets;
     DFY1155 public dfy1155;
@@ -23,10 +25,19 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
     string private _assetBaseUri;
 
     // creator => (assetId => Asset)
-    mapping(address => mapping(uint256 => Asset)) public assetList; // Should be changed to private later.
+    mapping(address => mapping(uint256 => Asset)) public assetList; // Public for debugging, should be changed to private later.
+
+    // Mapping from creator address to assetId in his/her possession
+    mapping(address => mapping(uint256 => bool)) private _assetsOfCreator;
+
+    // mapping of creator address to asset count
+    mapping(address => uint256) private _assetCountByCreator;
+
+    // Mapping from assetId to index of the creator asset list
+    mapping(uint256 => uint256) private _ownedAssetIndex;
 
     // creator => uint[]
-    mapping(address => uint256[]) public PossessionsByOwner;
+    mapping(address => uint256[]) public assetListByCreator;
 
     // assetId => Evaluation[]
     mapping(uint256 => Evaluation[]) public EvaluationsByAsset;
@@ -83,6 +94,11 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
         address evaluator
     );
 
+    modifier OnlyEOA() {
+        require(!msg.sender.isContract(), "Caller address must not be a contract address");
+        _;
+    }
+
     function setBaseURI(string memory _uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setAssetBaseURI(_uri);
     }
@@ -127,19 +143,28 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
     /**
     * @dev Asset creation request by customer
     * @dev msg.sender is the asset creator's address
+    * @param _cid is the CID string of the asset's JSON file stored on IFPS
     */
-    function createAssetRequest(string memory _cid) external {
+    function createAssetRequest(string memory _cid) external OnlyEOA {
         // TODO: Require validation of msg.sender
+        // msg.sender must not be a contract address
 
         uint256 _assetId = totalAssets.current();
+        
         assetList[msg.sender][_assetId] = Asset({
                                                 assetDataCID: _cid,
                                                 creator: msg.sender,
                                                 status: AssetStatus.OPEN
                                             });
+        
+        _assetsOfCreator[msg.sender][_assetId] = true;
+        _assetCountByCreator[msg.sender] += 1;
+
+        // map the _assetId to the index in the list of owned assets
+        _ownedAssetIndex[_assetId] = assetListByCreator[msg.sender].length;
 
         // update list of assets that are possessed by this creator
-        PossessionsByOwner[msg.sender].push(_assetId);
+        assetListByCreator[msg.sender].push(_assetId);
 
         emit AssetCreated(_assetId, assetList[msg.sender][_assetId]);
 
@@ -151,47 +176,54 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
     * @param _creator address representing the creator / owner of the assets.
     */
     function getAssetsByCreator(address _creator) external view returns (uint[] memory) {
-        // TODO: Data validation
+        // TODO: Input data validation
+        require(_creator != address(0), "There is no asset associated with the zero address");
 
-        return PossessionsByOwner[_creator];
+        return assetListByCreator[_creator];
     }
 
+    function _isAssetOfCreator(address _creator, uint256 _assetId) internal view returns (bool) {
+        return _assetsOfCreator[_creator][_assetId];
+    }
 
     /** 
     * @dev Remove an asset from the owner's collection
     */
-    // function removeAssetFromCreator(address _creator, uint256 _assetId) external {
-    //     // TODO: Data validation
-    //     // Only _creator can remove his/her own assets
-    //     require(_creator == _msgSender(), "Only the owner can remove his/her own asset");
+    function removeAssetFromCreator(address _creator, uint256 _assetId) external {
+        // TODO: Data validation
+        // Only _creator can remove his/her own assets
+        require(_creator == _msgSender(), "Only the owner can remove his/her own asset");
 
-    //     // Asset must exist and must be in _creator's possession -> check _assetId's existence
-    //     uint256[] storage _ownedAssets = PossessionsByOwner[_creator];
+        // Asset must exist and must be in _creator's possession -> check _assetId's existence
+        require(_isAssetOfCreator(_creator, _assetId), "The asset does not belong to this owner");
 
-    //     // Get the asset at the last position of the array
-    //     uint256 _lastAssetId = _ownedAssets[_ownedAssets.length - 1];
+        // load the assets owned by this creator
+        uint256[] storage _ownedAssets = assetListByCreator[_creator];
 
-    //     uint256 _indexTobeDeleted;
+        // get the index of _assetId in creator's asset list
+        uint256 _index = _ownedAssetIndex[_assetId];
 
-    //     if(_assetId != _lastAssetId) {
-            
-    //         // If the assetId is not at the last position of the array
-    //         // loop throught the array to find its index
-    //         for(uint8 index = 0; index < _ownedAssets.length; index++) {
-    //             if(_assetId == _ownedAssets[index]) {
-    //                 _indexTobeDeleted = index;
-    //                 break;
-    //             }
-    //         }
-            
-    //         // swap the assetId at found index with the one at the last position of the array
-    //         _ownedAssets[_ownedAssets.length - 1] = _ownedAssets[_indexTobeDeleted];
-    //         _ownedAssets[_indexTobeDeleted] = _lastAssetId;
-    //     }
+        // get the last index of the asset array
+        uint256 _lastIndex = _ownedAssets.length - 1;
+
+        // Get the asset at the last position of the array
+        uint256 _lastAssetId = _ownedAssets[_lastIndex];
+
+        if(_index != _lastIndex) {
+            // If the _index is not the _lastIndex            
+            // swap the assetId at found index with the one at the last position of the array
+            _ownedAssets[_lastIndex] = _ownedAssets[_index];
+            _ownedAssets[_index] = _lastAssetId;
+
+            // update index of swapped asset
+            _ownedAssetIndex[_lastAssetId] = _index;
+        }
         
-    //     delete _ownedAssets[_ownedAssets.length - 1];
-    //     delete assetList[_creator][_assetId];
-    // }
+        _ownedAssets.pop();        
+        delete _ownedAssetIndex[_assetId];
+        delete assetList[_creator][_assetId];
+        _assetCountByCreator[msg.sender]--;
+    }
 
     /**
     * @dev Asset evaluation by evaluator
