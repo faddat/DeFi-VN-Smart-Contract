@@ -221,6 +221,7 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
         
         _ownedAssets.pop();        
         delete _ownedAssetIndex[_assetId];
+        delete _assetsOfCreator[_creator][_assetId];
         delete assetList[_creator][_assetId];
         _assetCountByCreator[msg.sender]--;
     }
