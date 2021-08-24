@@ -233,10 +233,9 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
     * @param _currency is address of the token who create the asset
     * @param _price value of the asset, given by the Evaluator
     */
-    function evaluateAsset(uint _assetId, address _currency, uint _price) external {
+    function evaluateAsset(uint _assetId, address _currency, uint _price) external onlyRole(EVALUATOR_ROLE) {
         // TODO
         // Require validation of msg.sender
-        // Require msg.sender must be Whitelisted
         // Require validation of asset via _assetId
 
         uint _nextEvaluation = EvaluationsByAsset[_assetId].length;
