@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "../reputation/Reputation.sol";
 
 contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -26,11 +27,16 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
      * @param _zoom is coefficient used to represent risk params
      */
 
-    function initialize(uint256 _zoom
+    function initialize(
+        uint256 _zoom,
+        address _reputationAddress
     ) external notInitialized {
         ZOOM = _zoom;
         initialized = true;
         admin = address(msg.sender);
+
+        // Set reputation contract address
+        _setReputationContractAddress(_reputationAddress);
     }
 
     function setOperator(address _newOperator) onlyAdmin external {
@@ -184,6 +190,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // transfer to this contract
         safeTransfer(_collateralAddress, msg.sender, address(this), _amount);
+
+        // reward reputation points
+        _reputation.rewardReputationScore(msg.sender, 3, Reputation.ReasonType.BR_CREATE_COLLATERAL);
     }
 
     /**
@@ -1230,5 +1239,25 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // Update status of loan request
         statusStruct.status = LoanRequestStatus.PENDING;
         collateral.status = CollateralStatus.OPEN;
+    }
+
+    /** ===================================== REPUTATION FUNCTIONS & STATES ===================================== */
+
+    Reputation private _reputation;
+
+    event ChangeReputationContractAddress(address _reputationAddress);
+
+    function changeReputationContractAddress(address _newAddress) external onlyAdmin {
+        _setReputationContractAddress(_newAddress);
+    }
+
+    /** 
+    * @dev Change the address of Reputation contract
+    * @param _reputationAddress is the new address of Reputation contract
+    */
+    function _setReputationContractAddress(address _reputationAddress) internal {
+        _reputation = Reputation(_reputationAddress);
+
+        emit ChangeReputationContractAddress(_reputationAddress);
     }
 }
