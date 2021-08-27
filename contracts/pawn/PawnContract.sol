@@ -27,14 +27,12 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
      * @param _zoom is coefficient used to represent risk params
      */
 
-    function initialize(
-        uint256 _zoom,
-        address _reputationAddress
+    function initialize(uint256 _zoom
     ) external notInitialized {
         ZOOM = _zoom;
         initialized = true;
         admin = address(msg.sender);
-
+        
         // Set reputation contract address
         _setReputationContractAddress(_reputationAddress);
     }
@@ -190,9 +188,6 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // transfer to this contract
         safeTransfer(_collateralAddress, msg.sender, address(this), _amount);
-
-        // reward reputation points
-        _reputation.rewardReputationScore(msg.sender, 3, Reputation.ReasonType.BR_CREATE_COLLATERAL);
     }
 
     /**
@@ -313,6 +308,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         ++numberOffers;
 
         emit CreateOfferEvent(_idx, _collateralId, _offer);
+        
+        //reward points Reputation for creator offer
+        _reputation.rewardReputationScore(msg.sender, 2, Reputation.ReasonType.LD_CREATE_OFFER);
     }
 
     /**
@@ -340,6 +338,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         delete collateralOfferList.offerIdList[collateralOfferList.offerIdList.length - 1];
         emit CancelOfferEvent(_offerId, _collateralId, msg.sender);
+        
+        //reduce points Reputation for canceller offer
+        _reputation.reduceReputationScore(msg.sender, 2, Reputation.ReasonType.LD_CANCEL_OFFER);
     }
 
     /** ========================= PAWNSHOP PACKAGE FUNCTIONS & STATES ============================= */
@@ -428,6 +429,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             _idx, 
             newPackage
         );
+        
+        //reward points Reputation for creator PawnShopPackage
+        _reputation.rewardReputationScore(msg.sender, 3, Reputation.ReasonType.LD_CREATE_PACKAGE);
     }
 
     function activePawnShopPackage(uint256 _packageId)
@@ -439,6 +443,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         pawnShopPackage.status = PawnShopPackageStatus.ACTIVE;
         emit ChangeStatusPawnShopPackage(_packageId, PawnShopPackageStatus.ACTIVE);
+        
+        //reward points Reputation for owner PawnShopPackage
+        _reputation.rewardReputationScore(msg.sender, 3, Reputation.ReasonType.LD_REOPEN_PACKAGE);
     }
 
     function deactivePawnShopPackage(uint256 _packageId)
@@ -450,6 +457,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         pawnShopPackage.status = PawnShopPackageStatus.INACTIVE;
         emit ChangeStatusPawnShopPackage(_packageId, PawnShopPackageStatus.INACTIVE);
+        
+        //reduce points Reputation for owner PawnShopPackage
+        _reputation.reduceReputationScore(msg.sender, 3, Reputation.ReasonType.LD_CANCEL_PACKAGE);
     }
 
     /** ========================= SUBMIT & ACCEPT WORKFLOW OF PAWNSHOP PACKAGE FUNCTIONS & STATES ============================= */
@@ -698,6 +708,11 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // transfer loan asset to collateral owner
         safeTransfer(newContract.terms.loanAsset, newContract.terms.lender, newContract.terms.borrower, newContract.terms.loanAmount);
+        
+        //reward points Reputation for owner offer
+        _reputation.rewardReputationScore(offer.owner, 1, Reputation.ReasonType.BR_ACCEPT_OFFER);
+        //reward points Reputation for owner collateral
+        _reputation.rewardReputationScore(msg.sender, 1, Reputation.ReasonType.BR_ACCEPT_OFFER);
     }
 
     function calculateContractDuration(LoanDurationType durationType, uint256 duration)
@@ -705,9 +720,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     returns (uint256 inSeconds)
     {
         if (durationType == LoanDurationType.WEEK) {
-            inSeconds = 600 * duration; //  7 * 24 * 3600
+            inSeconds = 7 * 24 * 3600 * duration; //  7 * 24 * 3600
         } else {
-            inSeconds = 900 * duration; // 30 * 24 * 3600
+            inSeconds = 30 * 24 * 3600 * duration; // 30 * 24 * 3600
         }
     }
 
@@ -750,6 +765,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // Transfer loan token from lender to borrower
         safeTransfer(newContract.terms.loanAsset, newContract.terms.lender, newContract.terms.borrower, newContract.terms.loanAmount);
+        
+        //reward points Reputation for creator LoanContract 
+        _reputation.rewardReputationScore(msg.sender, 1, Reputation.ReasonType.LD_GENERATE_CONTRACT);
     }
 
     function createContract (
