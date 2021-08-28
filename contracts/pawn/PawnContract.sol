@@ -191,8 +191,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // transfer to this contract
         safeTransfer(_collateralAddress, msg.sender, address(this), _amount);
 
-        // reward reputation points
-        _reputation.rewardReputationScore(msg.sender, 3, Reputation.ReasonType.BR_CREATE_COLLATERAL);
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.BR_CREATE_COLLATERAL);
     }
 
     /**
@@ -221,6 +221,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         delete collaterals[_collateralId];
         emit WithdrawCollateralEvent(_collateralId, msg.sender);
+
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.BR_CANCEL_COLLATERAL);
     }
 
     /** ========================= OFFER FUNCTIONS & STATES ============================= */
@@ -698,6 +701,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // transfer loan asset to collateral owner
         safeTransfer(newContract.terms.loanAsset, newContract.terms.lender, newContract.terms.borrower, newContract.terms.loanAmount);
+
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.BR_ACCEPT_OFFER);
     }
 
     function calculateContractDuration(LoanDurationType durationType, uint256 duration)
@@ -1173,6 +1179,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // Transfer to system fee wallet fee amount
         safeTransfer(_contract.terms.collateralAsset, address(this), feeWallet, _systemFeeAmount);
 
+        // Adjust reputation score
+        _reputation.adjustReputationScore(_contract.terms.borrower, Reputation.ReasonType.BR_CONTRACT_DEFAULTED);
+
     }
 
     function _returnCollateralToBorrowerAndCloseContract(
@@ -1194,6 +1203,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // Execute: Transfer collateral to borrower
         safeTransfer(_contract.terms.collateralAsset, address(this), _contract.terms.borrower, _contract.terms.collateralAmount);
+
+        // Adjust reputation score
+        _reputation.adjustReputationScore(_contract.terms.borrower, Reputation.ReasonType.BR_CONTRACT_COMPLETE);
     }
 
     function findContractOfCollateral(
