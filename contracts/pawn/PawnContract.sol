@@ -188,6 +188,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // transfer to this contract
         safeTransfer(_collateralAddress, msg.sender, address(this), _amount);
+
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.BR_CREATE_COLLATERAL);
     }
 
     /**
@@ -216,6 +219,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         delete collaterals[_collateralId];
         emit WithdrawCollateralEvent(_collateralId, msg.sender);
+
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.BR_CANCEL_COLLATERAL);
     }
 
     /** ========================= OFFER FUNCTIONS & STATES ============================= */
@@ -309,8 +315,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         emit CreateOfferEvent(_idx, _collateralId, _offer);
         
-        //reward points Reputation for creator offer
-        _reputation.rewardReputationScore(msg.sender, 2, Reputation.ReasonType.LD_CREATE_OFFER);
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.LD_CREATE_OFFER);
     }
 
     /**
@@ -339,8 +345,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         delete collateralOfferList.offerIdList[collateralOfferList.offerIdList.length - 1];
         emit CancelOfferEvent(_offerId, _collateralId, msg.sender);
         
-        //reduce points Reputation for canceller offer
-        _reputation.reduceReputationScore(msg.sender, 2, Reputation.ReasonType.LD_CANCEL_OFFER);
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.LD_CANCEL_OFFER);
     }
 
     /** ========================= PAWNSHOP PACKAGE FUNCTIONS & STATES ============================= */
@@ -430,8 +436,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             newPackage
         );
         
-        //reward points Reputation for creator PawnShopPackage
-        _reputation.rewardReputationScore(msg.sender, 3, Reputation.ReasonType.LD_CREATE_PACKAGE);
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.LD_CREATE_PACKAGE);
     }
 
     function activePawnShopPackage(uint256 _packageId)
@@ -444,8 +450,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         pawnShopPackage.status = PawnShopPackageStatus.ACTIVE;
         emit ChangeStatusPawnShopPackage(_packageId, PawnShopPackageStatus.ACTIVE);
         
-        //reward points Reputation for owner PawnShopPackage
-        _reputation.rewardReputationScore(msg.sender, 3, Reputation.ReasonType.LD_REOPEN_PACKAGE);
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.LD_REOPEN_PACKAGE);
     }
 
     function deactivePawnShopPackage(uint256 _packageId)
@@ -458,8 +464,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         pawnShopPackage.status = PawnShopPackageStatus.INACTIVE;
         emit ChangeStatusPawnShopPackage(_packageId, PawnShopPackageStatus.INACTIVE);
         
-        //reduce points Reputation for owner PawnShopPackage
-        _reputation.reduceReputationScore(msg.sender, 3, Reputation.ReasonType.LD_CANCEL_PACKAGE);
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.LD_CANCEL_PACKAGE);
     }
 
     /** ========================= SUBMIT & ACCEPT WORKFLOW OF PAWNSHOP PACKAGE FUNCTIONS & STATES ============================= */
@@ -708,11 +714,10 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // transfer loan asset to collateral owner
         safeTransfer(newContract.terms.loanAsset, newContract.terms.lender, newContract.terms.borrower, newContract.terms.loanAmount);
-        
-        //reward points Reputation for owner offer
-        _reputation.rewardReputationScore(offer.owner, 1, Reputation.ReasonType.BR_ACCEPT_OFFER);
-        //reward points Reputation for owner collateral
-        _reputation.rewardReputationScore(msg.sender, 1, Reputation.ReasonType.BR_ACCEPT_OFFER);
+
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.BR_ACCEPT_OFFER);
+        _reputation.adjustReputationScore(offer.owner, Reputation.ReasonType.BR_ACCEPT_OFFER);
     }
 
     function calculateContractDuration(LoanDurationType durationType, uint256 duration)
@@ -766,8 +771,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // Transfer loan token from lender to borrower
         safeTransfer(newContract.terms.loanAsset, newContract.terms.lender, newContract.terms.borrower, newContract.terms.loanAmount);
         
-        //reward points Reputation for creator LoanContract 
-        _reputation.rewardReputationScore(msg.sender, 1, Reputation.ReasonType.LD_GENERATE_CONTRACT);
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.LD_GENERATE_CONTRACT);
     }
 
     function createContract (
@@ -1191,6 +1196,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         // Transfer to system fee wallet fee amount
         safeTransfer(_contract.terms.collateralAsset, address(this), feeWallet, _systemFeeAmount);
 
+        // Adjust reputation score
+        _reputation.adjustReputationScore(_contract.terms.borrower, Reputation.ReasonType.BR_CONTRACT_DEFAULTED);
+
     }
 
     function _returnCollateralToBorrowerAndCloseContract(
@@ -1212,6 +1220,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // Execute: Transfer collateral to borrower
         safeTransfer(_contract.terms.collateralAsset, address(this), _contract.terms.borrower, _contract.terms.collateralAmount);
+
+        // Adjust reputation score
+        _reputation.adjustReputationScore(_contract.terms.borrower, Reputation.ReasonType.BR_CONTRACT_COMPLETE);
     }
 
     function findContractOfCollateral(
