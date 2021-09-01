@@ -27,7 +27,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
      * @param _zoom is coefficient used to represent risk params
      */
 
-    function initialize(uint256 _zoom
+    function initialize(
+        uint256 _zoom,
+        address _reputationAddress
     ) external notInitialized {
         ZOOM = _zoom;
         initialized = true;
