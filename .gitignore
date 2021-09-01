@@ -353,3 +353,5 @@ MigrationBackup/
 .ionide/
 
 .idea
+contracts/pawn/PawnContractWithReputation_Flattened.sol
+contracts/pawn/PawnMockContract.sol
