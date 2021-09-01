@@ -24,7 +24,9 @@ contract Reputation is PausableUpgradeable, AccessControlUpgradeable {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     // mapping of user address's reputation score
-    mapping (address => uint32) public _reputationScore;
+    mapping (address => uint32) private _reputationScore;
+
+    address _contractCaller;
 
     // Reason for Reputation point adjustment
     /**
@@ -106,13 +108,33 @@ contract Reputation is PausableUpgradeable, AccessControlUpgradeable {
         _;
     }
 
+
+    /**
+    * @dev Get the address of the host contract
+    */
     function getContractCaller() external view returns (address) {
         return _contractCaller;
     }
     
-    function getReputaionScore(address _address) view external returns(uint32) {
+    /**
+    * @dev Set the host contract address that only allowed to call functions from this contract
+    */
+    function setContractCaller(address _caller) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setContractCaller(_caller);
+    }
+
+    function _setContractCaller(address _caller) internal {
+        require(_caller.isContract(), "DFY: Setting reputation contract caller to a non-contract address");
+        _contractCaller = _caller;
+    }
+
+    /**
+    * @dev Get the reputation score of an account
+    */
+    function getReputationScore(address _address) view external returns(uint32) {
         return _reputationScore[_address];
     }
+
 
     /**
     * @dev Return the absolute value of a signed integer
