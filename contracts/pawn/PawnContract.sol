@@ -27,14 +27,12 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
      * @param _zoom is coefficient used to represent risk params
      */
 
-    function initialize(
-        uint256 _zoom,
-        address _reputationAddress
+    function initialize(uint256 _zoom
     ) external notInitialized {
         ZOOM = _zoom;
         initialized = true;
         admin = address(msg.sender);
-
+        
         // Set reputation contract address
         _setReputationContractAddress(_reputationAddress);
     }
@@ -316,6 +314,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         ++numberOffers;
 
         emit CreateOfferEvent(_idx, _collateralId, _offer);
+        
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.LD_CREATE_OFFER);
     }
 
     /**
@@ -343,6 +344,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         delete collateralOfferList.offerIdList[collateralOfferList.offerIdList.length - 1];
         emit CancelOfferEvent(_offerId, _collateralId, msg.sender);
+        
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.LD_CANCEL_OFFER);
     }
 
     /** ========================= PAWNSHOP PACKAGE FUNCTIONS & STATES ============================= */
@@ -431,6 +435,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             _idx, 
             newPackage
         );
+        
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.LD_CREATE_PACKAGE);
     }
 
     function activePawnShopPackage(uint256 _packageId)
@@ -442,6 +449,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         pawnShopPackage.status = PawnShopPackageStatus.ACTIVE;
         emit ChangeStatusPawnShopPackage(_packageId, PawnShopPackageStatus.ACTIVE);
+        
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.LD_REOPEN_PACKAGE);
     }
 
     function deactivePawnShopPackage(uint256 _packageId)
@@ -453,6 +463,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         pawnShopPackage.status = PawnShopPackageStatus.INACTIVE;
         emit ChangeStatusPawnShopPackage(_packageId, PawnShopPackageStatus.INACTIVE);
+        
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.LD_CANCEL_PACKAGE);
     }
 
     /** ========================= SUBMIT & ACCEPT WORKFLOW OF PAWNSHOP PACKAGE FUNCTIONS & STATES ============================= */
@@ -704,6 +717,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // Adjust reputation score
         _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.BR_ACCEPT_OFFER);
+        _reputation.adjustReputationScore(offer.owner, Reputation.ReasonType.BR_ACCEPT_OFFER);
     }
 
     function calculateContractDuration(LoanDurationType durationType, uint256 duration)
@@ -711,9 +725,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     returns (uint256 inSeconds)
     {
         if (durationType == LoanDurationType.WEEK) {
-            inSeconds = 600 * duration; //  7 * 24 * 3600
+            inSeconds = 600 * duration;
         } else {
-            inSeconds = 900 * duration; // 30 * 24 * 3600
+            inSeconds = 900 * duration;
         }
     }
 
@@ -756,6 +770,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // Transfer loan token from lender to borrower
         safeTransfer(newContract.terms.loanAsset, newContract.terms.lender, newContract.terms.borrower, newContract.terms.loanAmount);
+        
+        // Adjust reputation score
+        _reputation.adjustReputationScore(msg.sender, Reputation.ReasonType.LD_GENERATE_CONTRACT);
     }
 
     function createContract (
@@ -1086,7 +1103,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // Execute: call internal liquidation
         _liquidationExecution(_contractId, ContractLiquidedReasonType.RISK);
-
+        
     }
 
     function calculateRemainingLoanAndRepaymentFromContract(

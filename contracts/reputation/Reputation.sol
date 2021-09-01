@@ -26,8 +26,6 @@ contract Reputation is PausableUpgradeable, AccessControlUpgradeable {
     // mapping of user address's reputation score
     mapping (address => uint32) public _reputationScore;
 
-    address _contractCaller;
-
     // Reason for Reputation point adjustment
     /**
     * @dev Reputation points in correspondence with ReasonType 
@@ -112,13 +110,8 @@ contract Reputation is PausableUpgradeable, AccessControlUpgradeable {
         return _contractCaller;
     }
     
-    function setContractCaller(address _caller) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setContractCaller(_caller);
-    }
-
-    function _setContractCaller(address _caller) internal {
-        require(_caller.isContract(), "DFY: Setting reputation contract caller to a non-contract address");
-        _contractCaller = _caller;
+    function getReputaionScore(address _address) view external returns(uint32) {
+        return _reputationScore[_address];
     }
 
     /**
@@ -177,8 +170,6 @@ contract Reputation is PausableUpgradeable, AccessControlUpgradeable {
     * @param _from is the address whose reputation score is going to be adjusted
     * @param _points is the points will be subtracted from _from's reputation score (unsigned integer)
     * @param _reasonType is the reason of score adjustment
-    *
-    * TODO: Limit function call permission only to _contractCaller
     */  
     function _reduceReputationScore(
         address _from, 
