@@ -360,3 +360,6 @@ contracts/pawn/artifacts
 contracts/pawn/PawnContractFlattened.sol
 contracts/reputation/artifacts
 contracts/reputation/Reputation_Flattened.sol
+
+#.Env file
+.env

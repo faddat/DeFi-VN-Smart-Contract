@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 // Will be replaced by DFY-AccessControl when it's merged.
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
@@ -11,7 +12,7 @@ import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 
-contract Reputation is PausableUpgradeable, AccessControlUpgradeable {
+contract Reputation is UUPSUpgradeable, PausableUpgradeable, AccessControlUpgradeable {
 
     using SafeMathUpgradeable for uint256;
     using SafeCastUpgradeable for uint256;
@@ -59,10 +60,16 @@ contract Reputation is PausableUpgradeable, AccessControlUpgradeable {
         BR_LATE_PAYMENT,
         BR_ACCEPT_OFFER,
         BR_CONTRACT_COMPLETE,
-        BR_CONTRACT_DEFAULTED
+        BR_CONTRACT_DEFAULTED,
+        
+        LD_REVIEWED_BY_BORROWER,
+        LD_KYC,
+
+        BR_REVIEWED_BY_LENDER,
+        BR_KYC
     }
 
-    mapping(ReasonType => int8) RewardByReason; 
+    mapping(ReasonType => int8) _rewardByReason; 
 
     event ReputationPointRewarded(address _user, uint256 _points, ReasonType _reasonType);
     event ReputationPointReduced(address _user, uint256 _points, ReasonType _reasonType);
@@ -77,20 +84,26 @@ contract Reputation is PausableUpgradeable, AccessControlUpgradeable {
         _initializeRewardByReason();
     }
 
-    function _initializeRewardByReason() internal {
-        RewardByReason[ReasonType.LD_CREATE_PACKAGE]    =  3;
-        RewardByReason[ReasonType.LD_CANCEL_OFFER]      = -3;
-        RewardByReason[ReasonType.LD_REOPEN_PACKAGE]    =  3;
-        RewardByReason[ReasonType.LD_GENERATE_CONTRACT] =  1;
-        RewardByReason[ReasonType.LD_CREATE_OFFER]      =  2;
-        RewardByReason[ReasonType.LD_CANCEL_OFFER]      = -2;
-        RewardByReason[ReasonType.BR_CREATE_COLLATERAL] =  3;
-        RewardByReason[ReasonType.BR_CANCEL_COLLATERAL] = -3;
-        RewardByReason[ReasonType.BR_ONTIME_PAYMENT]    =  1;
-        RewardByReason[ReasonType.BR_LATE_PAYMENT]      = -1;
-        RewardByReason[ReasonType.BR_ACCEPT_OFFER]      =  1;
-        RewardByReason[ReasonType.BR_CONTRACT_COMPLETE] =  5;
-        RewardByReason[ReasonType.BR_CONTRACT_DEFAULTED]= -5;
+    function _initializeRewardByReason() internal virtual {
+        _rewardByReason[ReasonType.LD_CREATE_PACKAGE]    =  3;
+        _rewardByReason[ReasonType.LD_CANCEL_PACKAGE]    = -3;
+        _rewardByReason[ReasonType.LD_REOPEN_PACKAGE]    =  3;
+        _rewardByReason[ReasonType.LD_GENERATE_CONTRACT] =  1;
+        _rewardByReason[ReasonType.LD_CREATE_OFFER]      =  2;
+        _rewardByReason[ReasonType.LD_CANCEL_OFFER]      = -2;
+        _rewardByReason[ReasonType.BR_CREATE_COLLATERAL] =  3;
+        _rewardByReason[ReasonType.BR_CANCEL_COLLATERAL] = -3;
+        _rewardByReason[ReasonType.BR_ONTIME_PAYMENT]    =  1;
+        _rewardByReason[ReasonType.BR_LATE_PAYMENT]      = -1;
+        _rewardByReason[ReasonType.BR_ACCEPT_OFFER]      =  1;
+        _rewardByReason[ReasonType.BR_CONTRACT_COMPLETE] =  5;
+        _rewardByReason[ReasonType.BR_CONTRACT_DEFAULTED]= -5;
+    }
+
+    function _authorizeUpgrade(address) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
+
+    function version() public virtual pure returns (string memory) {
+        return "v1.0";
     }
 
     modifier isNotZeroAddress(address _to) {
@@ -112,7 +125,7 @@ contract Reputation is PausableUpgradeable, AccessControlUpgradeable {
     /**
     * @dev Get the address of the host contract
     */
-    function getContractCaller() external view returns (address) {
+    function getContractCaller() external virtual view returns (address) {
         return _contractCaller;
     }
     
@@ -131,7 +144,7 @@ contract Reputation is PausableUpgradeable, AccessControlUpgradeable {
     /**
     * @dev Get the reputation score of an account
     */
-    function getReputationScore(address _address) view external returns(uint32) {
+    function getReputationScore(address _address) external virtual view returns(uint32) {
         return _reputationScore[_address];
     }
 
@@ -155,7 +168,7 @@ contract Reputation is PausableUpgradeable, AccessControlUpgradeable {
         ReasonType _reasonType) 
         external whenNotPaused isNotZeroAddress(_user) onlyEOA(_user) onlyContractCaller
     {
-        int8 pointsByReason     = RewardByReason[_reasonType];
+        int8 pointsByReason     = _rewardByReason[_reasonType];
         uint256 points          = abs(pointsByReason);
 
         // Check if the points mapped by _reasonType is greater than 0 or not
