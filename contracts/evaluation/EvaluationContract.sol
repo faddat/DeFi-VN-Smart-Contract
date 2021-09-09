@@ -8,46 +8,73 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpg
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/Math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./DFY-AccessControl.sol";
-import "./DFY-1155-draft.sol";
+import "./DFY_Physical_NFTs.sol";
+import "./IBEP20.sol";
 
-contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAccessControl {
+
+
+contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAccessControl{
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using AddressUpgradeable for address;
     using SafeMathUpgradeable for uint;
-    
-    CountersUpgradeable.Counter public totalAssets;
-    DFY1155 public dfy1155;
 
-    // Assuming _assetBaseUri = "https://ipfs.io/ipfs/"
+    // Total asset
+    CountersUpgradeable.Counter public totalAssets;
+
+    // DFY Token;
+    IBEP20 public ibepDFY;
+
+    // NFT Token;
+    DFY_Physical_NFTs public dfy_physical_nfts;
+
+    // Address admin
+    address private addressAdmin;
+
+    // Assuming _assetBaseUri = "https://ipfs.io/ipfs"
     string private _assetBaseUri;
 
-    // creator => (assetId => Asset)
-    mapping(address => mapping(uint256 => Asset)) public assetList; // Public for debugging, should be changed to private later.
+    // Mapping list asset
+    // AssetId => Asset
+    mapping (uint256 => Asset) public assetList;
+
+    // Mapping from creator to asset
+    // Creator => listAssetId
+    mapping (address => uint256[]) public assetListByCreator; 
 
     // Mapping from creator address to assetId in his/her possession
-    mapping(address => mapping(uint256 => bool)) private _assetsOfCreator;
+    // Creator => (assetId => bool)
+    mapping (address => mapping (uint256 => bool)) private _assetsOfCreator;
 
-    // mapping of creator address to asset count
-    mapping(address => uint256) private _assetCountByCreator;
+    // Total evaluation
+    CountersUpgradeable.Counter public totalEvaluation;
 
-    // Mapping from assetId to index of the creator asset list
-    mapping(uint256 => uint256) private _ownedAssetIndex;
+    // Mapping list evaluation
+    // EvaluationId => evaluation
+    mapping (uint256 => Evaluation) public evaluationList;
 
-    // creator => uint[]
-    mapping(address => uint256[]) public assetListByCreator;
+    // Mapping from asset to list evaluation
+    // AssetId => listEvaluationId
+    mapping (uint256 => uint256[]) public evaluationByAsset;
 
-    // assetId => Evaluation[]
-    mapping(uint256 => Evaluation[]) public EvaluationsByAsset;
+    // Mapping from evaluator to evaluation
+    // Evaluator => listEvaluation
+    mapping (address => uint256[]) public evaluationListByEvaluator;
 
-    // evaluator address => has minter role
-    mapping(address => bool) public WhiteListedEvaluator;
+    // Mapping tokenId to asset
+    // TokenId => asset
+    mapping (uint256 => Asset) public tokenIdByAsset;
+
+    // Mapping tokenId to evaluation
+    // TokenId => evaluation
+    mapping (uint256 => Evaluation) public tokenIdByEvaluation;
 
     function initialize(
         string memory _uri,
-        address _dfy1155_contract_address
+        address _dfy1155_physical_nft_address,
+        address _ibep20_DFY_address
     ) public initializer {
         __ERC1155Holder_init();
         __DFYAccessControl_init();
@@ -55,75 +82,76 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
 
         _setAssetBaseURI(_uri);
 
-        _setNFTAddress(_dfy1155_contract_address);
+        _setNFTAddress(_dfy1155_physical_nft_address);
+
+        _setTokenIBEP20Address(_ibep20_DFY_address);
+
+        _setAddressAdmin(msg.sender);
     }
 
+    // Enum status asset
     enum AssetStatus {OPEN, EVALUATED, NFT_CREATED}
 
+    // Asset
     struct Asset {
         string assetDataCID;
         address creator;
         AssetStatus status;
     }
 
-    enum EvaluationStatus {CREATED, APPROVED, REJECTED}
+    // Enum status evaluation
+    enum EvaluationStatus {EVALUATED, EVALUATION_ACCEPTED, EVALUATION_REJECTED, NFT_CREATED}
 
+    // Evaluation
     struct Evaluation {
+        uint256 assetId;
         address evaluator;
         address token;
-        uint price;        
+        uint256 price;
         EvaluationStatus status;
     }
 
     event AssetCreated (
-        uint assetId,
+        uint256 assetId,
         Asset asset
     );
+
     event AssetEvaluated(
-        uint assetId,
+        uint256 evaluationId,
+        uint256 assetId,
         Asset asset,
         Evaluation evaluation
     );
-    event NftCreationSuccessful(
-        address creator,
-        uint tokenID,
-        string cid,
-        AssetStatus status
-    );
-    event WhiteListEvaluatorRegistrationSuccessful(
+
+    event ApproveEvaluator(
         address evaluator
     );
 
     modifier OnlyEOA() {
-        require(!msg.sender.isContract(), "Caller address must not be a contract address");
+        require(!msg.sender.isContract(), "Caller address must not be a contract address.");
         _;
     }
 
+    // Function set base uri
     function setBaseURI(string memory _uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setAssetBaseURI(_uri);
     }
 
+    // Function set asset base uri
     function _setAssetBaseURI(string memory _uri) internal {
-        require(bytes(_uri).length > 0, "Asset data URI must not be empty");
+        require(bytes(_uri).length > 0, "Asset data URI must not be empty.");
         _assetBaseUri = _uri;
     }
 
-    function _assetBaseURI() internal view returns (string memory) {
-        return _assetBaseUri;
+    // Function  
+    function assetURI(uint256 _assetId) external view returns (string memory){
+        return bytes(_assetBaseUri).length > 0 ? string(abi.encodePacked(_assetBaseUri, assetList[_assetId].assetDataCID)) : "";
     }
 
-    function assetURI(address _creator, uint _assetId) external view returns (string memory) {
-        return bytes(_assetBaseUri).length > 0 ? string(abi.encodePacked(_assetBaseUri, assetList[_creator][_assetId].assetDataCID)) : "";
-    }
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC1155ReceiverUpgradeable, AccessControlUpgradeable)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 interfaceId) public view override(ERC1155ReceiverUpgradeable, AccessControlUpgradeable) returns (bool){
         return super.supportsInterface(interfaceId);
     }
+
 
     /**
     * @dev Set the current NFT contract address to a new address
@@ -131,13 +159,33 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
     */
     function setNftContractAddress(address _newAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // Verify if the new address is a contract or not
-        require(_newAddress.isContract(), "Input address is not a contract address");
+        require(_newAddress.isContract(), "Input address is not a contract address.");
         
         _setNFTAddress(_newAddress);
     }
 
     function _setNFTAddress(address _newAddress) internal {
-        dfy1155 = DFY1155(_newAddress);
+        dfy_physical_nfts = DFY_Physical_NFTs(_newAddress);
+    }
+
+    /**
+    * @dev Set the current NFT contract address to a new address
+    * @param _newAddress is the address of the new NFT contract
+    */
+    function setTokenIBEP20Address(address _newAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        // Verify if the new address is a contract or not
+        require(_newAddress.isContract(), "Input address is not a contract address.");
+        
+        _setTokenIBEP20Address(_newAddress);
+    }
+
+    function _setTokenIBEP20Address(address _newAddress) internal {
+        ibepDFY = IBEP20(_newAddress);
+    }
+
+    
+    function _setAddressAdmin(address _newAddress) internal {
+        addressAdmin = _newAddress;
     }
 
     /**
@@ -149,26 +197,29 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
         // TODO: Require validation of msg.sender
         // msg.sender must not be a contract address
 
+        // Require length _cid >0
+        require(bytes(_cid).length > 0, "Asset data CID must not be empty.");
+
+        // Create asset id
         uint256 _assetId = totalAssets.current();
-        
-        assetList[msg.sender][_assetId] = Asset({
-                                                assetDataCID: _cid,
-                                                creator: msg.sender,
-                                                status: AssetStatus.OPEN
-                                            });
-        
-        _assetsOfCreator[msg.sender][_assetId] = true;
-        _assetCountByCreator[msg.sender] += 1;
 
-        // map the _assetId to the index in the list of owned assets
-        _ownedAssetIndex[_assetId] = assetListByCreator[msg.sender].length;
-
-        // update list of assets that are possessed by this creator
+        // Add asset from asset list
+        assetList[_assetId] =  Asset({
+                                assetDataCID: _cid,
+                                creator: msg.sender,
+                                status: AssetStatus.OPEN
+                            });
+        
+        // Add asset id from list asset id of owner
         assetListByCreator[msg.sender].push(_assetId);
 
-        emit AssetCreated(_assetId, assetList[msg.sender][_assetId]);
+        // Update status from asset id of owner 
+        _assetsOfCreator[msg.sender][_assetId] = true;
 
+        // Update total asset
         totalAssets.increment();
+
+        emit AssetCreated(_assetId, assetList[_assetId]);
     }
 
     /**
@@ -182,48 +233,9 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
         return assetListByCreator[_creator];
     }
 
+    // Function check asset of creator
     function _isAssetOfCreator(address _creator, uint256 _assetId) internal view returns (bool) {
         return _assetsOfCreator[_creator][_assetId];
-    }
-
-    /** 
-    * @dev Remove an asset from the owner's collection
-    */
-    function removeAssetFromCreator(address _creator, uint256 _assetId) external {
-        // TODO: Data validation
-        // Only _creator can remove his/her own assets
-        require(_creator == _msgSender(), "Only the owner can remove his/her own asset");
-
-        // Asset must exist and must be in _creator's possession -> check _assetId's existence
-        require(_isAssetOfCreator(_creator, _assetId), "The asset does not belong to this owner");
-
-        // load the assets owned by this creator
-        uint256[] storage _ownedAssets = assetListByCreator[_creator];
-
-        // get the index of _assetId in creator's asset list
-        uint256 _index = _ownedAssetIndex[_assetId];
-
-        // get the last index of the asset array
-        uint256 _lastIndex = _ownedAssets.length - 1;
-
-        // Get the asset at the last position of the array
-        uint256 _lastAssetId = _ownedAssets[_lastIndex];
-
-        if(_index != _lastIndex) {
-            // If the _index is not the _lastIndex            
-            // swap the assetId at found index with the one at the last position of the array
-            _ownedAssets[_lastIndex] = _ownedAssets[_index];
-            _ownedAssets[_index] = _lastAssetId;
-
-            // update index of swapped asset
-            _ownedAssetIndex[_lastAssetId] = _index;
-        }
-        
-        _ownedAssets.pop();        
-        delete _ownedAssetIndex[_assetId];
-        delete _assetsOfCreator[_creator][_assetId];
-        delete assetList[_creator][_assetId];
-        _assetCountByCreator[msg.sender]--;
     }
 
     /**
@@ -233,67 +245,127 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
     * @param _currency is address of the token who create the asset
     * @param _price value of the asset, given by the Evaluator
     */
-    function evaluateAsset(uint _assetId, address _currency, uint _price) external onlyRole(EVALUATOR_ROLE) {
+    function evaluateAsset(uint256 _assetId, address _currency, uint256 _price) external OnlyEOA onlyRole(EVALUATOR_ROLE) {
         // TODO
         // Require validation of msg.sender
+        require(msg.sender != address(0),"Calling from the zero address.");
+
+        // Require address currency is contract
+        require(_currency.isContract(), "Address token is not defined.");
+
+        // Require validation is creator asset
+        require(!_isAssetOfCreator(msg.sender, _assetId), "You cant evaluted your asset.");
+
         // Require validation of asset via _assetId
+        require(_assetId >=0 ,"Invalid asset or asset does not exist.");
 
-        uint _nextEvaluation = EvaluationsByAsset[_assetId].length;
+        // Get asset to asset id;
+        Asset memory _asset = assetList[_assetId];
+
+        // Check asset is exists
+        require(bytes(_asset.assetDataCID).length >0, "Asset does not exists.");
+
+        // check status asset
+        require(_asset.status == AssetStatus.OPEN, "This asset evaluated.");
+
+        // Create evaluation id
+        uint256 _evaluationId = totalEvaluation.current();
         
-        // Add evaluation data to mapping
-        EvaluationsByAsset[_assetId][_nextEvaluation] = Evaluation({
-                                                            evaluator: msg.sender,
-                                                            token: _currency,
-                                                            price: _price,
-                                                            status: EvaluationStatus.CREATED
-                                                        });
-
-        // Evaluation memory _evaluation = Evaluation({
-        //                             evaluator: msg.sender,
-        //                             token: _currency,
-        //                             price: _price,
-        //                             status: EvaluationStatus.CREATED
-        //                         });
+        // Add evaluation to evaluationList 
+        evaluationList[_evaluationId] = Evaluation({
+                                                assetId: _assetId,
+                                                evaluator: msg.sender,
+                                                token: _currency,
+                                                price: _price,
+                                                status: EvaluationStatus.EVALUATED
+                                            });
         
-        // Add evaluation data to mapping
-        // EvaluationsByAsset[_assetId].push(_evaluation);
+        
+        // Add evaluation id to list evaluation of asset
+        evaluationByAsset[_assetId].push(_evaluationId);
 
-        // _asset.status = AssetStatus.EVALUATED;
+        // Add evaluation id to list evaluation of evaluator 
+        evaluationListByEvaluator[msg.sender].push(_evaluationId);
 
-        // emit EvaluationSentSuccessful(_creator, msg.sender, _assetId, _asset.assetDataCID, _asset.status);
+        // Update total evaluation
+        totalEvaluation.increment();
+
+        emit AssetEvaluated(_evaluationId,_assetId,_asset,evaluationList[_evaluationId]);
     }
 
     /** 
     * @dev Customer accept evaluation data from evaluator
-    * @param _creator is address of the Customer who create the asset
     * @param _assetId is the ID of the asset in AssetList
-    * @param _evaluationIndex is the look up index of the Evaluation data in EvaluationsByAsset list
+    * @param _evaluationId is the look up index of the Evaluation data in EvaluationsByAsset list
     */
-    function acceptEvaluation(address _creator, uint _assetId, uint _evaluationIndex) external {
-        Asset storage _asset = assetList[_creator][_assetId];
+    function acceptOrRejectEvaluation(uint256 _assetId,uint256 _evaluationId, uint8 _evalutionStatus) external OnlyEOA{
         
+        // Check creator is address 0
+        require(msg.sender!=address(0),"Address creator must be different from 0.");
+
+        // Check asset id
+        require(_assetId >=0 ,"Invalid asset or asset does not exist.");
+
+        // Check evaluation index
+        require(_evaluationId >=0 ,"Invalid evaluation or evaluation does not exist.");
+
+        // Get asset to asset id;
+        Asset memory _asset = assetList[_assetId];
+
+        // Check asset to creator
+        require(_asset.creator == msg.sender, "You can only accept or reject your evaluation asset");
+
+        // Check evaluation status
+        require(_evalutionStatus > 0 && _evalutionStatus < 3, "You can on ly choose status EVALUATION_ACCEPTED or EVALUATION_REJECTED.");
+
+        // Check asset is exists
+        require(_asset.status == AssetStatus.OPEN, "Asset does not allow evaluation.");
+
         // approve an evaluation by looking for its index in the array.
-        Evaluation storage _evaluation = EvaluationsByAsset[_assetId][_evaluationIndex];
-        _evaluation.status = EvaluationStatus.APPROVED;
+        Evaluation memory _evaluation = evaluationList[_evaluationId];
         
-        // reject all other evaluation
-        for(uint i = 0; i < EvaluationsByAsset[_assetId].length; i++) {
-            if(i != _evaluationIndex) {
-                EvaluationsByAsset[_assetId][i].status = EvaluationStatus.REJECTED;
+        require(_evaluation.status == EvaluationStatus.EVALUATED,"You cant accept or reject this evaluation.");
+
+        if(_evalutionStatus == 1){
+            _acceptEvaluation(_assetId,_evaluationId );
+        }else{
+            _rejectEvaluation(_assetId, _evaluationId);
+        }
+       
+    }
+
+    function _acceptEvaluation(uint256 _assetId, uint256 _evaluationId) internal {
+
+        Asset storage _asset = assetList[_assetId];
+
+        Evaluation storage _evaluation = evaluationList[_evaluationId];
+
+        _evaluation.status = EvaluationStatus.EVALUATION_ACCEPTED;
+        
+        // reject all other evaluation of asset
+        for(uint i = 0; i < evaluationByAsset[_assetId].length; i++) {
+            if(evaluationByAsset[_assetId][i] != _evaluationId) {
+                uint256  _evaluationIdReject = evaluationByAsset[_assetId][i];
+                _rejectEvaluation(_assetId, _evaluationIdReject);
             }
         }
 
         _asset.status = AssetStatus.EVALUATED;
 
-        // emit AssetEvaluated(
-        //     _evaluationIndex,
-        //     _creator, 
-        //     EvaluationsByAsset[_assetId][_evaluationIndex].evaluator, 
-        //     EvaluationsByAsset[_assetId][_evaluationIndex].price
-        // );
-
-        emit AssetEvaluated(_assetId, _asset, _evaluation);
+         emit AssetEvaluated(_evaluationId, _assetId, _asset , _evaluation);
     }
+
+    function _rejectEvaluation(uint256 _assetId, uint256 _evaluationId) internal {
+
+        Asset storage _asset = assetList[_assetId];
+
+        Evaluation storage _evaluation = evaluationList[_evaluationId];
+        
+        _evaluation.status = EvaluationStatus.EVALUATION_REJECTED;
+
+        emit AssetEvaluated(_evaluationId,_assetId, _asset, _evaluation);
+    }
+
     
     /**
     * @dev After an evaluation is approved, the Evaluator who submit
@@ -302,54 +374,69 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
     *
     * @param _creator is the customer address who created the asset
     * @param _assetId is the ID of the asset being converted to NFT token
-    * @param _evaluationIndex is the look up index of the Evaluation data in the EvaluationsByAsset list
+    * @param _evaluationId is the look up index of the Evaluation data in the EvaluationsByAsset list
     */
 
-    // function createNftToken(address _creator, uint _assetId, uint _evaluationIndex) external onlyRole(EVALUATOR_ROLE) {
-    //     Evaluation memory evaluation = EvaluationsByAsset[_assetId][_evaluationIndex];
+    function createNftToken(address _creator, uint256 _assetId, uint256 _evaluationId, uint256 _mintingFee) external OnlyEOA onlyRole(EVALUATOR_ROLE) {
+        
+        // Check creator
+        require(_creator!=address(0),"Address creator must be different from 0.");
 
-    //     require(msg.sender == evaluation.evaluator, "Evaluator address does not match");
+        // Check asset id
+        require(_assetId >=0 ,"Invalid asset or asset does not exist.");
 
-    //     Asset storage asset = assetList[_creator][_assetId];
+        // Check evaluationId
+        require(_evaluationId >=0 ,"Invalid evaluation or evaluation does not exist.");
 
-    //     uint mintedTokenId = dfy1155.mint(_creator, 1, asset.assetDataCID, "");
+        Evaluation storage _evaluation = evaluationList[_evaluationId];
 
-    //     asset.status = AssetStatus.NFT_CREATED;
+        // Check status evaluation
+        require(_evaluation.status == EvaluationStatus.EVALUATION_ACCEPTED,"Evaluation is not acceptable");
 
-    //     emit NftCreationSuccessful(_creator, mintedTokenId, asset.assetDataCID, asset.status);
-    // }
+        // Check evaluator
+        require(msg.sender == _evaluation.evaluator, "Evaluator address does not match");
 
-    // /**
-    // * @dev Add an Evaluator to Whitelist and grant him Minter role.
-    // * @param _evaluator is the address of an Evaluator
-    // */
+        Asset storage _asset = assetList[_assetId];
 
-    // function addEvaluator(address _account) external onlyRole(PROGRAM_ADMIN_ROLE) {
-    //     // Grant Evaluator role
-    //     setEvaluatorRole(_account);
+        // Check status asset
+        require(_asset.status == AssetStatus.EVALUATED);
 
-    //     // Approve
-    //     emit WhiteListEvaluatorRegistrationSuccessful(_account);
-    // }
+        // Check balance
+        require(ibepDFY.balanceOf(msg.sender) >= (_mintingFee*1 ether), "Your balance is not enough.");
+        
 
-    // /** 
-    // * @dev Remove an Evaluator from Whitelist
-    // */
-    // function removeEvaluator(address _evaluator) external OnlyAdmin{
+        require(ibepDFY.allowance(msg.sender, address(this)) >= (_mintingFee * 1 ether), "You have not authorized the smart contract.");
 
-    // }
+        // Create NFT
+        uint256 mintedTokenId = dfy_physical_nfts.mint(_creator, msg.sender, 1, _asset.assetDataCID, "");
 
-    /** 
-    * @dev Add an Evaluated token to Whitelist
-    */
-    function addEvaluatedToken(uint _tokenId) external {
+        // Tranfer minting fee to admin
+        ibepDFY.transferFrom(msg.sender,addressAdmin , _mintingFee*1 ether);
+
+        // Update status asset
+        _asset.status = AssetStatus.NFT_CREATED;
+
+        // Update status evaluation
+        _evaluation.status = EvaluationStatus.NFT_CREATED;
+
+        // Add token id to list asset of owner
+        tokenIdByAsset[mintedTokenId] = _asset;
+
+        // Add token id to list nft of evaluator
+        tokenIdByEvaluation[mintedTokenId] = _evaluation;
 
     }
 
-    /** 
-    * @dev Remove a Evaluated token from Whitelist
-    */
-    function removeEvaluatedToken(uint _tokenId) external {
+    /**
+    * @dev Add an Evaluator to Whitelist and grant him Minter role.
+    * @param _account is the address of an Evaluator
+    */ 
+    function addEvaluator(address _account) external onlyRole(OPERATOR_ROLE) {
+        // Grant Evaluator role
+        setEvaluatorRole(_account);
 
+        // Approve
+        emit ApproveEvaluator(_account);
     }
+
 }
