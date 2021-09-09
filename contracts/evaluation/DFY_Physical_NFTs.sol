@@ -6,9 +6,10 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Burn
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./DFY-AccessControl.sol";
 
-contract DFY_Physical_NFTs is ERC1155Upgradeable, DFYAccessControl, PausableUpgradeable, ERC1155BurnableUpgradeable {
+contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessControl, PausableUpgradeable, ERC1155BurnableUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using AddressUpgradeable for address;
 
@@ -56,6 +57,9 @@ contract DFY_Physical_NFTs is ERC1155Upgradeable, DFYAccessControl, PausableUpgr
         
         _setBaseURI(_uri);
     }
+
+    function _authorizeUpgrade(address) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
+
 
     function _setBaseURI(string memory _uri) internal {
         require(bytes(_uri).length > 0, "BaseURI must not be blank");

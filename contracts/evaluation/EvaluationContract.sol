@@ -10,13 +10,14 @@ import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./DFY-AccessControl.sol";
 import "./DFY_Physical_NFTs.sol";
 import "./IBEP20.sol";
 
 
 
-contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAccessControl{
+contract AssetEvaluation is UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUpgradeable, DFYAccessControl{
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using AddressUpgradeable for address;
     using SafeMathUpgradeable for uint;
@@ -88,6 +89,8 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
 
         _setAddressAdmin(msg.sender);
     }
+
+    function _authorizeUpgrade(address) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 
     // Enum status asset
     enum AssetStatus {OPEN, EVALUATED, NFT_CREATED}
