@@ -375,7 +375,7 @@ contract AssetEvaluation is UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUp
     * @dev evaluation data will call this function to generate an NFT token
     * @dev and transfer its ownership to Asset Creator's address.
     *
-    * @param _creator is the customer address who created the asset
+    * @param _owner is the customer address who created the asset
     * @param _assetId is the ID of the asset being converted to NFT token
     * @param _evaluationId is the look up index of the Evaluation data in the EvaluationsByAsset list
     */
