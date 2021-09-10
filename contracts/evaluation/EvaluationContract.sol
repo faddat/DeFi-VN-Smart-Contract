@@ -377,10 +377,10 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
     * @param _evaluationId is the look up index of the Evaluation data in the EvaluationsByAsset list
     */
 
-    function createNftToken(address _creator, uint256 _assetId, uint256 _evaluationId, uint256 _mintingFee) external OnlyEOA onlyRole(EVALUATOR_ROLE) {
+    function createNftToken(address _owner, uint256 _assetId, uint256 _evaluationId, uint256 _mintingFee) external OnlyEOA onlyRole(EVALUATOR_ROLE) {
         
         // Check creator
-        require(_creator!=address(0),"Address creator must be different from 0.");
+        require(_owner!=address(0),"Address creator must be different from 0.");
 
         // Check asset id
         require(_assetId >=0 ,"Invalid asset or asset does not exist.");
@@ -408,7 +408,7 @@ contract AssetEvaluation is ERC1155HolderUpgradeable, PausableUpgradeable, DFYAc
         require(ibepDFY.allowance(msg.sender, address(this)) >= (_mintingFee * 1 ether), "You have not authorized the smart contract.");
 
         // Create NFT
-        uint256 mintedTokenId = dfy_physical_nfts.mint(_creator, msg.sender, 1, _asset.assetDataCID, "");
+        uint256 mintedTokenId = dfy_physical_nfts.mint(_owner, msg.sender, 1, _asset.assetDataCID, "");
 
         // Tranfer minting fee to admin
         ibepDFY.transferFrom(msg.sender,addressAdmin , _mintingFee*1 ether);
