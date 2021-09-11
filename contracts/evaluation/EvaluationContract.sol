@@ -108,6 +108,7 @@ contract AssetEvaluation is UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUp
     // Evaluation
     struct Evaluation {
         uint256 assetId;
+        string  evaluationCID;
         address evaluator;
         address token;
         uint256 price;
@@ -248,7 +249,7 @@ contract AssetEvaluation is UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUp
     * @param _currency is address of the token who create the asset
     * @param _price value of the asset, given by the Evaluator
     */
-    function evaluateAsset(uint256 _assetId, address _currency, uint256 _price) external OnlyEOA onlyRole(EVALUATOR_ROLE) {
+    function evaluateAsset(uint256 _assetId, address _currency, uint256 _price, string memory _evaluationCID) external OnlyEOA onlyRole(EVALUATOR_ROLE) {
         // TODO
         // Require validation of msg.sender
         require(msg.sender != address(0),"Calling from the zero address.");
@@ -277,6 +278,7 @@ contract AssetEvaluation is UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUp
         // Add evaluation to evaluationList 
         evaluationList[_evaluationId] = Evaluation({
                                                 assetId: _assetId,
+                                                evaluationCID: _evaluationCID,
                                                 evaluator: msg.sender,
                                                 token: _currency,
                                                 price: _price,
@@ -380,7 +382,7 @@ contract AssetEvaluation is UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUp
     * @param _evaluationId is the look up index of the Evaluation data in the EvaluationsByAsset list
     */
 
-    function createNftToken(address _owner, uint256 _assetId, uint256 _evaluationId, uint256 _mintingFee) external OnlyEOA onlyRole(EVALUATOR_ROLE) {
+    function createNftToken(address _owner, uint256 _assetId, uint256 _evaluationId, uint256 _mintingFee, string memory _nftCID ) external OnlyEOA onlyRole(EVALUATOR_ROLE) {
         
         // Check creator
         require(_owner!=address(0),"Address creator must be different from 0.");
@@ -405,16 +407,16 @@ contract AssetEvaluation is UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUp
         require(_asset.status == AssetStatus.EVALUATED);
 
         // Check balance
-        require(ibepDFY.balanceOf(msg.sender) >= (_mintingFee*1 ether), "Your balance is not enough.");
+        require(ibepDFY.balanceOf(msg.sender) >= (_mintingFee), "Your balance is not enough.");
         
 
-        require(ibepDFY.allowance(msg.sender, address(this)) >= (_mintingFee * 1 ether), "You have not authorized the smart contract.");
+        require(ibepDFY.allowance(msg.sender, address(this)) >= (_mintingFee), "You have not authorized the smart contract.");
 
         // Create NFT
-        uint256 mintedTokenId = dfy_physical_nfts.mint(_owner, msg.sender, 1, _asset.assetDataCID, "");
+        uint256 mintedTokenId = dfy_physical_nfts.mint(_owner, msg.sender, 1, _nftCID , "");
 
         // Tranfer minting fee to admin
-        ibepDFY.transferFrom(msg.sender,addressAdmin , _mintingFee*1 ether);
+        ibepDFY.transferFrom(msg.sender,addressAdmin , _mintingFee);
 
         // Update status asset
         _asset.status = AssetStatus.NFT_CREATED;

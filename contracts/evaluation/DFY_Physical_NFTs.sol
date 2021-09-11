@@ -51,6 +51,7 @@ contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessContr
         __DFYAccessControl_init();
         __Pausable_init();
         __ERC1155Burnable_init();
+        __UUPSUpgradeable_init();
 
         name = _name;
         symbol = _symbol;
