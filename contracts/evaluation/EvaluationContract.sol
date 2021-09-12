@@ -254,6 +254,9 @@ contract AssetEvaluation is UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUp
         // Require validation of msg.sender
         require(msg.sender != address(0),"Calling from the zero address.");
 
+        // Check evaluation CID
+        require(bytes(_evaluationCID).length >0, "Evaluation CID not be empty.");
+
         // Require address currency is contract
         require(_currency.isContract(), "Address token is not defined.");
 
@@ -303,7 +306,7 @@ contract AssetEvaluation is UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUp
     * @param _assetId is the ID of the asset in AssetList
     * @param _evaluationId is the look up index of the Evaluation data in EvaluationsByAsset list
     */
-    function acceptOrRejectEvaluation(uint256 _assetId,uint256 _evaluationId, uint8 _evalutionStatus) external OnlyEOA{
+    function acceptOrRejectEvaluation(uint256 _assetId,uint256 _evaluationId, uint8 _evaluationStatus) external OnlyEOA{
         
         // Check creator is address 0
         require(msg.sender!=address(0),"Address creator must be different from 0.");
@@ -321,7 +324,7 @@ contract AssetEvaluation is UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUp
         require(_asset.creator == msg.sender, "You can only accept or reject your evaluation asset");
 
         // Check evaluation status
-        require(_evalutionStatus > 0 && _evalutionStatus < 3, "You can on ly choose status EVALUATION_ACCEPTED or EVALUATION_REJECTED.");
+        require(_evaluationStatus > 0 && _evaluationStatus < 3, "You can on ly choose status EVALUATION_ACCEPTED or EVALUATION_REJECTED.");
 
         // Check asset is exists
         require(_asset.status == AssetStatus.OPEN, "Asset does not allow evaluation.");
@@ -331,7 +334,7 @@ contract AssetEvaluation is UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUp
         
         require(_evaluation.status == EvaluationStatus.EVALUATED,"You cant accept or reject this evaluation.");
 
-        if(_evalutionStatus == 1){
+        if(_evaluationStatus == 1){
             _acceptEvaluation(_assetId,_evaluationId );
         }else{
             _rejectEvaluation(_assetId, _evaluationId);
@@ -377,16 +380,18 @@ contract AssetEvaluation is UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUp
     * @dev evaluation data will call this function to generate an NFT token
     * @dev and transfer its ownership to Asset Creator's address.
     *
-    * @param _owner is the customer address who created the asset
     * @param _assetId is the ID of the asset being converted to NFT token
     * @param _evaluationId is the look up index of the Evaluation data in the EvaluationsByAsset list
     */
 
-    function createNftToken(address _owner, uint256 _assetId, uint256 _evaluationId, uint256 _mintingFee, string memory _nftCID ) external OnlyEOA onlyRole(EVALUATOR_ROLE) {
-        
-        // Check creator
-        require(_owner!=address(0),"Address creator must be different from 0.");
+    function createNftToken(uint256 _assetId, uint256 _evaluationId, uint256 _mintingFee, string memory _nftCID ) external OnlyEOA onlyRole(EVALUATOR_ROLE) {
 
+        // Check minting fee
+        require(_mintingFee > 0, "Minting fee must be greater than 0");
+
+        // Check nft CID
+        require(bytes(_nftCID).length >0, "NFT CID not be empty.");
+        
         // Check asset id
         require(_assetId >=0 ,"Invalid asset or asset does not exist.");
 
@@ -413,7 +418,7 @@ contract AssetEvaluation is UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUp
         require(ibepDFY.allowance(msg.sender, address(this)) >= (_mintingFee), "You have not authorized the smart contract.");
 
         // Create NFT
-        uint256 mintedTokenId = dfy_physical_nfts.mint(_owner, msg.sender, 1, _nftCID , "");
+        uint256 mintedTokenId = dfy_physical_nfts.mint(_asset.creator, msg.sender, 1, _nftCID , "");
 
         // Tranfer minting fee to admin
         ibepDFY.transferFrom(msg.sender,addressAdmin , _mintingFee);
