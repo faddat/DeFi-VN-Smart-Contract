@@ -44,6 +44,56 @@ contract PawnNFTContract is
         return super.supportsInterface(interfaceId);
     }
 
+    /** ========================= EVENT ============================= */
+    //create collateral & withdraw
+    event CollateralEvent(
+        uint256 nftCollateralId,
+        Collateral data
+    );
+    
+    //create offer & cancel
+    event OfferEvent(
+        uint256 offerId,
+        uint256 nftCollateralId,
+        Offer data
+    );
+
+    //accept offer
+    event LoanContractCreatedEvent(
+        address fromAddress,
+        uint256 nftCollateralId,
+        Contract data
+    );
+
+    //repayment
+    event PaymentRequestEvent (
+        uint256 contractId,
+        PaymentRequest data
+    );
+
+    event RepaymentEvent (
+        uint256 contractId,
+        uint256 paidPenaltyAmount,
+        uint256 paidInterestAmount,
+        uint256 paidLoanAmount,
+        uint256 paidPenaltyFeeAmount,
+        uint256 paidInterestFeeAmount,
+        uint256 prepaidAmount,
+        uint256 paymentRequestId
+    );
+
+    //liquidity & defaul
+     event ContractLiquidedEvent(
+        uint256 contractId,
+        uint256 liquidedAmount,
+        uint256 feeAmount,
+        ContractLiquidedReasonType reasonType
+    );
+    event LoanContractCompletedEvent(
+        uint256 contractId
+    );
+
+
     function createCollateral(
         uint256 _tokenId, 
         address _currency, 
@@ -56,4 +106,6 @@ contract PawnNFTContract is
         TODO: Implementation
         */
     }
+
+    
 }
