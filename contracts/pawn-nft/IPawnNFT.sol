@@ -81,11 +81,11 @@ interface IPawnNFT {
         uint256 _duration,
         uint256 _liquidityThreshold,
         LoanDurationType _loanDurationType,
-        LoanDurationType _repaymentCycleType,
+        LoanDurationType _repaymentCycleType
     ) external;
 
     function cancelOffer(
         uint256 _offerId,
-        uint256 _collateralId,
+        uint256 _collateralId
     ) external;
 }
