@@ -10,9 +10,14 @@ import "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "./IReputation.sol";
 
 
-contract Reputation is UUPSUpgradeable, PausableUpgradeable, AccessControlUpgradeable {
+contract Reputation is 
+    IReputation, 
+    UUPSUpgradeable, 
+    PausableUpgradeable, 
+    AccessControlUpgradeable {
 
     using SafeMathUpgradeable for uint256;
     using SafeCastUpgradeable for uint256;
@@ -45,29 +50,7 @@ contract Reputation is UUPSUpgradeable, PausableUpgradeable, AccessControlUpgrad
     * BR_ACCEPT_OFFER       : +1
     * BR_CONTRACT_COMPLETE  : +5
     * BR_CONTRACT_DEFAULTED : -5
-    */ 
-
-    enum ReasonType {
-        LD_CREATE_PACKAGE, 
-        LD_CANCEL_PACKAGE,
-        LD_REOPEN_PACKAGE,
-        LD_GENERATE_CONTRACT,
-        LD_CREATE_OFFER,
-        LD_CANCEL_OFFER,
-        BR_CREATE_COLLATERAL,
-        BR_CANCEL_COLLATERAL,
-        BR_ONTIME_PAYMENT,
-        BR_LATE_PAYMENT,
-        BR_ACCEPT_OFFER,
-        BR_CONTRACT_COMPLETE,
-        BR_CONTRACT_DEFAULTED,
-        
-        LD_REVIEWED_BY_BORROWER,
-        LD_KYC,
-
-        BR_REVIEWED_BY_LENDER,
-        BR_KYC
-    }
+    */
 
     mapping(ReasonType => int8) _rewardByReason; 
 
@@ -103,7 +86,7 @@ contract Reputation is UUPSUpgradeable, PausableUpgradeable, AccessControlUpgrad
     function _authorizeUpgrade(address) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 
     function version() public virtual pure returns (string memory) {
-        return "v1.0";
+        return "1.0";
     }
 
     modifier isNotZeroAddress(address _to) {
@@ -120,7 +103,6 @@ contract Reputation is UUPSUpgradeable, PausableUpgradeable, AccessControlUpgrad
         require(_contractCaller == _msgSender(), "DFY: Calling Reputation adjustment from a non-contract address");
         _;
     }
-
 
     /**
     * @dev Get the address of the host contract
@@ -144,7 +126,7 @@ contract Reputation is UUPSUpgradeable, PausableUpgradeable, AccessControlUpgrad
     /**
     * @dev Get the reputation score of an account
     */
-    function getReputationScore(address _address) external virtual view returns(uint32) {
+    function getReputationScore(address _address) external virtual override view returns(uint32) {
         return _reputationScore[_address];
     }
 
@@ -166,7 +148,8 @@ contract Reputation is UUPSUpgradeable, PausableUpgradeable, AccessControlUpgrad
     function adjustReputationScore(
         address _user, 
         ReasonType _reasonType) 
-        external whenNotPaused isNotZeroAddress(_user) onlyEOA(_user) onlyContractCaller
+        external override
+        whenNotPaused isNotZeroAddress(_user) onlyEOA(_user) onlyContractCaller
     {
         int8 pointsByReason     = _rewardByReason[_reasonType];
         uint256 points          = abs(pointsByReason);

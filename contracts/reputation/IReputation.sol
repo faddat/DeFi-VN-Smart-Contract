@@ -3,6 +3,25 @@
 pragma solidity ^0.8.0;
 
 interface IReputation {
+    
+    // Reason for Reputation point adjustment
+    /**
+    * @dev Reputation points in correspondence with ReasonType 
+    * LD_CREATE_PACKAGE     : +3
+    * LD_CANCEL_PACKAGE     : -3
+    * LD_REOPEN_PACKAGE     : +3
+    * LD_GENERATE_CONTRACT  : +1
+    * LD_CREATE_OFFER       : +2
+    * LD_CANCEL_OFFER       : -2
+    * BR_CREATE_COLLATERAL  : +3
+    * BR_CANCEL_COLLATERAL  : -3
+    * BR_ONTIME_PAYMENT     : +1
+    * BR_LATE_PAYMENT       : -1
+    * BR_ACCEPT_OFFER       : +1
+    * BR_CONTRACT_COMPLETE  : +5
+    * BR_CONTRACT_DEFAULTED : -5
+    */
+    
     enum ReasonType {
         LD_CREATE_PACKAGE, 
         LD_CANCEL_PACKAGE,
