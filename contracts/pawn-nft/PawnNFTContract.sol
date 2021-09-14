@@ -95,11 +95,12 @@ contract PawnNFTContract is
 
 
     function createCollateral(
-        uint256 _tokenId, 
-        address _currency, 
-        uint256 _amount,
+        address _collection,
+        uint256 _nftTokenId, 
+        uint256 _loanAmount,
         address _loanAsset,
-        uint256 _duration,
+        uint256 _nftTokenQuantity,
+        uint256 _expectedDurationQty,
         LoanDurationType _durationType
     ) external override {
         /**
@@ -107,5 +108,88 @@ contract PawnNFTContract is
         */
     }
 
+    function withdrawCollateral(
+        uint256 _nftCollateralId
+    ) external override 
+    {
+
+    }
+
+    function createOffer(
+        uint256 _nftCollateralId,
+        address _repaymentAsset,
+        uint256 _loanToValue,
+        uint256 _loanAmount,
+        uint256 _interest,
+        uint256 _duration,
+        uint256 _liquidityThreshold,
+        LoanDurationType _loanDurationType,
+        LoanDurationType _repaymentCycleType
+    ) external override 
+    {
+
+    }
+
+    function cancelOffer(
+        uint256 _offerId,
+        uint256 _nftCollateralId
+    ) external override 
+    {
+
+    }
+
+    function acceptOffer(
+        uint256 _nftCollateralId, 
+        uint256 _offerId
+    ) external override
+    {
+
+    }
+
+    function closePaymentRequestAndStartNew(
+        uint256 _contractId,
+        uint256 _remainingLoan,
+        uint256 _nextPhrasePenalty,
+        uint256 _nextPhraseInterest,
+        uint256 _dueDateTimestamp,
+        PaymentRequestTypeEnum _paymentRequestType,
+        bool _chargePrepaidFee
+    ) external override 
+    {
+
+    }
+
+    function repayment(
+        uint256 _contractId,
+        uint256 _paidPenaltyAmount,
+        uint256 _paidInterestAmount,
+        uint256 _paidLoanAmount
+    ) external override
+    {
+
+    }
+
+    function collateralRiskLiquidationExecution(
+        uint256 _contractId,
+        uint256 _collateralPerRepaymentTokenExchangeRate,
+        uint256 _collateralPerLoanAssetExchangeRate
+    ) external override
+    {
+        
+    }
+
+    function lateLiquidationExecution(
+        uint256 _contractId
+    ) external override
+    {
+        
+    }
+
+    function notPaidFullAtEndContractLiquidation(
+        uint256 _contractId
+    ) external override
+    {
+        
+    }
     
 }
