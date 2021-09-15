@@ -139,7 +139,7 @@ interface IPawnNFT {
     struct Contract {
         uint256 nftCollateralId;
         int256 offerId;
-        int256 pawnShopPackageId;
+       // int256 pawnShopPackageId; //bỏ trường này
         ContractTerms terms;
         ContractStatus status;
         uint8 lateCount;
@@ -153,11 +153,6 @@ interface IPawnNFT {
 
     /** ========================= REPAYMENT ============================= */
     
-    /**
-    * @dev close payment request and start new payment request 
-    * @param _contractId is id collateral
-    * @param _remainingLoan is address token repayment
-    */ 
 
     struct PaymentRequest {
         uint256 requestId;
@@ -172,6 +167,16 @@ interface IPawnNFT {
         PaymentRequestStatusEnum status;
     }
 
+    /**
+    * @dev End lend period settlement and generate invoice for next period
+    * @param _contractId is id contract
+    * @param _remainingLoan is remaining Loan of borrower
+    * @param _nextPhrasePenalty is next Phrase Penalty
+    * @param _nextPhraseInterest is token next Phrase Interest
+    * @param _dueDateTimestamp is due DateTimestamp
+    * @param _paymentRequestType is type of payment request
+    * @param _chargePrepaidFee is charge Prepaid Fee
+    */
     function closePaymentRequestAndStartNew(
         uint256 _contractId,
         uint256 _remainingLoan,
@@ -182,6 +187,13 @@ interface IPawnNFT {
         bool _chargePrepaidFee
     ) external;
 
+    /**
+    * @dev Borrowers make repayments
+    * @param _contractId is id contract
+    * @param _paidPenaltyAmount is paid Penalty Amount 
+    * @param _paidInterestAmount is paid Interest Amount
+    * @param _paidLoanAmount is paidLoanAmount
+    */
     function repayment(
         uint256 _contractId,
         uint256 _paidPenaltyAmount,
