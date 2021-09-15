@@ -29,9 +29,11 @@ interface IPawnNFT {
 
     /**
     * @dev create collateral function, collateral will be stored in this contract
+    * @param _collection is address NFT token collection
     * @param _nftTokenId is token id of NFT
     * @param _loanAmount is amount collateral
     * @param _loanAsset is address of loan token
+    * @param _nftTokenQuantity is quantity NFT token
     * @param _expectedDurationQty is expected duration
     * @param _durationType is expected duration type
     */
@@ -82,7 +84,12 @@ interface IPawnNFT {
     * @param _nftCollateralId is id collateral
     * @param _repaymentAsset is address token repayment
     * @param _loanToValue is value collateral of loan
-    * @param _repaymentAsset is token repayment
+    * @param _loanAmount is amount token of loan
+    * @param _interest is interest of loan
+    * @param _duration is duration of loan
+    * @param _liquidityThreshold is liquidity threshold of loan
+    * @param _loanDurationType is duration type of loan 
+    * @param _repaymentCycleType is repayment type of loan 
     */
 
     function createOffer(
@@ -97,6 +104,11 @@ interface IPawnNFT {
         LoanDurationType _repaymentCycleType
     ) external;
 
+    /**
+    * @dev cancel offer
+    * @param _offerId is id offer
+    * @param _nftCollateralId is id NFT collateral
+    */
     function cancelOffer(
         uint256 _offerId,
         uint256 _nftCollateralId
