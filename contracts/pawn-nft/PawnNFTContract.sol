@@ -61,7 +61,7 @@ contract PawnNFTContract is
     //accept offer
     event LoanContractCreatedEvent(
         address fromAddress,
-        uint256 nftCollateralId,
+        uint256 contractId,   
         Contract data
     );
 
