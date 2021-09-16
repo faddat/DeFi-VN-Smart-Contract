@@ -17,35 +17,38 @@ interface IPawnNFT {
 
     struct Collateral {
         address owner;
+        address nftContract;
         uint256 nftTokenId;
-        address nftCollection;
         uint256 loanAmount;
         address loanAsset;
         uint256 nftTokenQuantity;
         uint256 expectedDurationQty;
-        LoanDurationType expectedDurationType;
+        LoanDurationType durationType;
         CollateralStatus status;
     }
 
     /**
     * @dev create collateral function, collateral will be stored in this contract
-    * @param _collection is address NFT token collection
+    * @param _nftContract is address NFT token collection
     * @param _nftTokenId is token id of NFT
     * @param _loanAmount is amount collateral
     * @param _loanAsset is address of loan token
     * @param _nftTokenQuantity is quantity NFT token
     * @param _expectedDurationQty is expected duration
     * @param _durationType is expected duration type
+    * @param _UID is UID pass create collateral to event collateral
     */
 
     function createCollateral(
-        address _collection,
-        uint256 _nftTokenId, 
+        address _nftContract,
+        uint256 _nftTokenId,
         uint256 _loanAmount,
         address _loanAsset,
         uint256 _nftTokenQuantity,
         uint256 _expectedDurationQty,
-        LoanDurationType _durationType) 
+        LoanDurationType _durationType,
+        uint256 _UID
+    ) 
     external;
 
     /**
@@ -68,22 +71,19 @@ interface IPawnNFT {
     struct Offer {
         address owner;
         address repaymentAsset;
-        uint256 loanToValue;
         uint256 loanAmount;
         uint256 interest;
         uint256 duration;
         OfferStatus status;
-        LoanDurationType loanDrationType;
+        LoanDurationType loanDurationType;
         LoanDurationType repaymentCycleType;
         uint256 liquidityThreshold;
-        bool isInit;
     }
 
     /**
     * @dev create offer to collateral
     * @param _nftCollateralId is id collateral
     * @param _repaymentAsset is address token repayment
-    * @param _loanToValue is value collateral of loan
     * @param _loanAmount is amount token of loan
     * @param _interest is interest of loan
     * @param _duration is duration of loan
@@ -95,13 +95,13 @@ interface IPawnNFT {
     function createOffer(
         uint256 _nftCollateralId,
         address _repaymentAsset,
-        uint256 _loanToValue,
         uint256 _loanAmount,
         uint256 _interest,
         uint256 _duration,
         uint256 _liquidityThreshold,
         LoanDurationType _loanDurationType,
-        LoanDurationType _repaymentCycleType
+        LoanDurationType _repaymentCycleType,
+        uint256 _UID
     ) external;
 
     /**
@@ -121,7 +121,7 @@ interface IPawnNFT {
         address lender;
         uint256 nftTokenId;
         address nftCollateralAsset;
-        uint256 nftCollateralEvaluatedValue;
+        uint256 nftCollateralAmount;
         address loanAsset;
         uint256 loanAmount;
         address repaymentAsset;
@@ -139,7 +139,6 @@ interface IPawnNFT {
     struct Contract {
         uint256 nftCollateralId;
         int256 offerId;
-       // int256 pawnShopPackageId; //bỏ trường này
         ContractTerms terms;
         ContractStatus status;
         uint8 lateCount;
@@ -147,7 +146,8 @@ interface IPawnNFT {
 
     function acceptOffer(
         uint256 _nftCollateralId, 
-        uint256 _offerId
+        uint256 _offerId,
+        uint256 _UID
     ) external;
 
 

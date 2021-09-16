@@ -13,14 +13,22 @@ contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessContr
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using AddressUpgradeable for address;
 
+    // Total NFT token
     CountersUpgradeable.Counter public totalToken;
     
-    // Mapping list tokenId
-    // tokenId => cid
+    // Address evaluation
+    address public evaluationContract;
+
+    // Mapping list tokenId to CID
+    // TokenId => CID
     mapping(uint256 => string) public tokenIdListToCID;
 
+    // Mapping token id to information evaluation of NFT token 
+    // TokenId => NFTEvaluation
+    mapping (uint256 => NFTEvaluation) public tokenIdOfEvaluation;
+
     // Mapping tokenId to owner
-    // tokentId => address
+    // TokentId => address
     mapping(uint256 => address) public tokenIdByOwner;
 
     // Mapping address by tokenId
@@ -28,19 +36,36 @@ contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessContr
     mapping (address => uint256[]) public tokenIdListByOwner;
 
     // Mapping evaluator to NFT 
-    // address evaluator => listTokenId
+    // Address evaluator => listTokenId
     mapping (address => uint256[] ) public tokenIdListByEvaluator;
 
+    // Struct NFT Evaluation
+    struct NFTEvaluation{
+        address evaluationContract;
+        uint256 evaluationId;
+    }
+
+    // Name NFT token
     string public name;
+
+    // Symbol NFT token
     string public symbol;
 
+    // Base URI NFT Token
     string private _tokenBaseUri;
 
+    // Event NFT create success
     event NFTCreated(
         address assetOwner,
         uint256 tokenID,
         string cid
     );
+
+    // Modifier check contract valuation call mint NFT token
+    modifier onlyEvaluation(){
+        require(msg.sender == evaluationContract, 'Cant mint.');
+        _;
+    }
 
     function initialize(
         string memory _name,
@@ -94,9 +119,33 @@ contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessContr
         _unpause();
     }
 
-    function mint(address _assetOwner, address _evaluator, uint256 _amount, string memory _cid, bytes memory _data) 
+    /**
+    * @dev set address evaluation contract
+    * @param _evaluationContract is address evaluation contract
+    */
+    function setEvaluationContract(address _evaluationContract) public onlyRole(DEFAULT_ADMIN_ROLE){
+        // Check address different address(0)
+        require(_evaluationContract != address(0), "Address is different address(0).");
+
+        // Check address is contract
+        require(_evaluationContract.isContract(), "Address isnt contract.");
+
+        // Set address evaluation
+        evaluationContract = _evaluationContract;
+    }
+
+    /**
+    * @dev evaluation contract call this function mint NFT token
+    * @param _assetOwner is owner of asset mint NFT token
+    * @param _evaluator is evaluator mint NFT
+    * @param _evaluatontId is id evaluation NFT token
+    * @param _amount is amount NFT token
+    * @param _cid is cid of NFT token
+    * @param _data is data of NFT token
+    */
+    function mint(address _assetOwner, address _evaluator, uint256 _evaluatontId, uint256 _amount, string memory _cid, bytes memory _data) 
         public
-        onlyRole(EVALUATOR_ROLE) 
+        onlyEvaluation() 
         returns (uint256 tokenId)
     {
         // Gennerate tokenId
@@ -104,6 +153,12 @@ contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessContr
 
         // Add mapping tokenId to CID
         tokenIdListToCID[tokenId] = _cid;
+
+        // Create NFT Evaluation and add to list
+        tokenIdOfEvaluation[tokenId] = NFTEvaluation({
+            evaluationContract: msg.sender,
+            evaluationId: _evaluatontId
+        });
 
         // Add mapping tokenId to address owner
         tokenIdByOwner[tokenId] = _assetOwner;
@@ -141,4 +196,5 @@ contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessContr
     {
         return super.supportsInterface(interfaceId);
     }
+
 }

@@ -48,21 +48,24 @@ contract PawnNFTContract is
     //create collateral & withdraw
     event CollateralEvent(
         uint256 nftCollateralId,
-        Collateral data
+        Collateral data,
+        uint256 UID
     );
     
     //create offer & cancel
     event OfferEvent(
         uint256 offerId,
         uint256 nftCollateralId,
-        Offer data
+        Offer data,
+        uint256 UID
     );
 
     //accept offer
     event LoanContractCreatedEvent(
         address fromAddress,
         uint256 contractId,   
-        Contract data
+        Contract data,
+        uint256 UID
     );
 
     //repayment
@@ -95,13 +98,14 @@ contract PawnNFTContract is
 
 
     function createCollateral(
-        address _collection,
-        uint256 _nftTokenId, 
+        address _nftContract,
+        uint256 _nftTokenId,
         uint256 _loanAmount,
         address _loanAsset,
         uint256 _nftTokenQuantity,
         uint256 _expectedDurationQty,
-        LoanDurationType _durationType
+        LoanDurationType _durationType,
+        uint256 _UID
     ) external override {
         /**
         TODO: Implementation
@@ -121,13 +125,13 @@ contract PawnNFTContract is
     function createOffer(
         uint256 _nftCollateralId,
         address _repaymentAsset,
-        uint256 _loanToValue,
         uint256 _loanAmount,
         uint256 _interest,
         uint256 _duration,
         uint256 _liquidityThreshold,
         LoanDurationType _loanDurationType,
-        LoanDurationType _repaymentCycleType
+        LoanDurationType _repaymentCycleType,
+        uint256 _UID
     ) external override 
     {
 
@@ -143,7 +147,8 @@ contract PawnNFTContract is
 
     function acceptOffer(
         uint256 _nftCollateralId, 
-        uint256 _offerId
+        uint256 _offerId,
+        uint256 _UID
     ) external override
     {
 
