@@ -105,6 +105,9 @@ contract PawnNFTContract is
     ) external override {
         /**
         TODO: Implementation
+
+        Chú ý: Kiểm tra bên Physical NFT, so khớp số NFT quantity với _nftTokenQuantity
+        Chỉ cho phép input <= amount của NFT
         */
     }
 
@@ -168,14 +171,13 @@ contract PawnNFTContract is
     {
 
     }
-
+    
     function collateralRiskLiquidationExecution(
         uint256 _contractId,
         uint256 _collateralPerRepaymentTokenExchangeRate,
         uint256 _collateralPerLoanAssetExchangeRate
-    ) external override
-    {
-        
+    ) external override {
+        //uint256 valueOfCollateralLiquidationThreshold = _contract.terms.nftCollateralEvaluatedValue * _contract.terms.liquidityThreshold / (100 * ZOOM);
     }
 
     function lateLiquidationExecution(
@@ -191,5 +193,4 @@ contract PawnNFTContract is
     {
         
     }
-    
 }

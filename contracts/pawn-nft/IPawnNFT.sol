@@ -121,7 +121,7 @@ interface IPawnNFT {
         address lender;
         uint256 nftTokenId;
         address nftCollateralAsset;
-        uint256 nftCollateralAmount;
+        uint256 nftCollateralEvaluatedValue;
         address loanAsset;
         uint256 loanAmount;
         address repaymentAsset;
@@ -214,6 +214,4 @@ interface IPawnNFT {
     function notPaidFullAtEndContractLiquidation(
         uint256 _contractId
     ) external;
-
-
 }
