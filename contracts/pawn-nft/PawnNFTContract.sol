@@ -9,31 +9,30 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "../evaluation/DFY-AccessControl.sol";
-import "../evaluation/DFY_Physical_NFTs.sol";
-import "../evaluation/IBEP20.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
+import "./DFY-AccessControl.sol";
+import "./DFY_Physical_NFTs.sol";
+import "./IBEP20.sol";
 import "./IPawnNFT.sol";
 
 contract PawnNFTContract is 
-    Ownable, Pausable,
-    ReentrancyGuard,
     IPawnNFT, 
     Initializable, 
-    UUPSUpgradeable, 
-    ERC1155HolderUpgradeable, 
+    UUPSUpgradeable,
+    OwnableUpgradeable,
     PausableUpgradeable, 
-    DFYAccessControl
-{
+    ReentrancyGuardUpgradeable, 
+    ERC1155HolderUpgradeable,
+    DFYAccessControl{
 
     using AddressUpgradeable for address;
     using SafeMathUpgradeable for uint;
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
-    using SafeERC20 for IERC20;
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     mapping (address => uint256) public whitelistCollateral;
     address public operator; 
     address public feeWallet = address(this);
@@ -140,6 +139,30 @@ contract PawnNFTContract is
         safeTransfer(_token, address(this), admin, calculateAmount(_token, address(this)));
     }
 
+    function safeTranferNFTToken(address _nftToken, address _from, address _to, uint256 _id, uint256 _amount) internal {
+        
+        // check address token
+        require(_nftToken != address(0), "Address token must be different address(0).");
+
+        // check address from
+        require(_from != address(0), "Address from must be different address(0).");
+
+        // check address from
+        require(_to != address(0), "Address to must be different address(0).");
+
+        // Check approve
+        require(IERC1155Upgradeable(_nftToken).isApprovedForAll(_from, address(this)), "You dont approve token.");
+
+        // Check amount token
+        require(_amount > 0, "Amount must be grean than 0.");
+
+        // Check balance of from,
+        require(IERC1155Upgradeable(_nftToken).balanceOf(_from,_id) >= _amount, "Your balance not enough.");
+
+        // Transfer token
+        IERC1155Upgradeable(_nftToken).safeTransferFrom(_from,_to,_id,_amount,"");
+    }
+
     /** ========================= EVENT ============================= */
     //create collateral & withdraw
     event CollateralEvent(
@@ -223,13 +246,58 @@ contract PawnNFTContract is
         uint256 _expectedDurationQty,
         LoanDurationType _durationType,
         uint256 _UID
-    ) external override {
+    ) external override nonReentrant {
         /**
         TODO: Implementation
 
         Chú ý: Kiểm tra bên Physical NFT, so khớp số NFT quantity với _nftTokenQuantity
         Chỉ cho phép input <= amount của NFT
         */
+
+        // Check white list nft contract
+        require(whitelistCollateral[_nftContract] == 1, "Not support collateral.");
+
+        // Check NFT token id
+        require(_nftTokenId >= 0, "Token id dose not exists.");
+
+        // Check loan amount
+        require(_loanAmount > 0, "Loan amount must be greater than 0.");
+
+        // Check loan asset
+        require(_loanAsset != address(0), "Address loan must be different address(0).");
+
+        // Check quantity NFT token
+        require(_nftTokenQuantity > 0, "Token quantity must be grean than 0.");
+
+        // Check duration quantity
+        require(_expectedDurationQty > 0, "Duration quantity must be grean than 0.");
+
+        // Create Collateral Id
+        uint256 collateralId = numberCollaterals.current();
+
+        // Transfer token
+        safeTranferNFTToken(_nftContract, msg.sender, address(this), _nftTokenId, _nftTokenQuantity);
+
+        // Create collateral
+        collaterals[collateralId] = Collateral({
+                                                owner: msg.sender,
+                                                nftContract: _nftContract,
+                                                nftTokenId: _nftTokenId,
+                                                loanAmount: _loanAmount,
+                                                loanAsset: _loanAsset,
+                                                nftTokenQuantity: _nftTokenQuantity,
+                                                expectedDurationQty: _expectedDurationQty,
+                                                durationType: _durationType,
+                                                status: CollateralStatus.OPEN
+                                                });
+        
+        // Update number colaterals
+        numberCollaterals.increment();
+        
+
+
+        emit CollateralEvent(collateralId, collaterals[collateralId],_UID);
+                                                
     }
 
     function withdrawCollateral(

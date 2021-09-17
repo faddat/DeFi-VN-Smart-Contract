@@ -11,14 +11,14 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./DFY-AccessControl.sol";
 import "./DFY_Physical_NFTs.sol";
 import "./IBEP20.sol";
 
 
 
-contract AssetEvaluation is ReentrancyGuard,UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUpgradeable, DFYAccessControl{
+contract AssetEvaluation is ReentrancyGuardUpgradeable,UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUpgradeable, DFYAccessControl{
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using AddressUpgradeable for address;
     using SafeMathUpgradeable for uint;
@@ -312,7 +312,7 @@ contract AssetEvaluation is ReentrancyGuard,UUPSUpgradeable,ERC1155HolderUpgrade
     * @param _assetId is the ID of the asset in AssetList
     * @param _evaluationId is the look up index of the Evaluation data in EvaluationsByAsset list
     */
-    function _checkDataAcceptOrReject(uint256 _assetId,uint256 _evaluationId) internal returns (bool) {
+    function _checkDataAcceptOrReject(uint256 _assetId,uint256 _evaluationId) internal view returns (bool) {
         
         // Check creator is address 0
         require(msg.sender!=address(0), "Caller different address(0).");
@@ -334,6 +334,9 @@ contract AssetEvaluation is ReentrancyGuard,UUPSUpgradeable,ERC1155HolderUpgrade
 
         // approve an evaluation by looking for its index in the array.
         Evaluation memory _evaluation = evaluationList[_evaluationId];
+
+        // Check status evaluation
+        require(_evaluation.status == EvaluationStatus.EVALUATED, "Not accept or reject evaluation.");
         
         return true;
     }
