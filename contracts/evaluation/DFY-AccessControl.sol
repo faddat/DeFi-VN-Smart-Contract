@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
@@ -42,30 +43,9 @@ contract DFYAccessControl is AccessControlUpgradeable {
 
     event ContractAdminChanged(address from, address to);
 
-    function setOperatorRole(address account) public virtual onlyRole(DEFAULT_ADMIN_ROLE) {
-        grantRole(OPERATOR_ROLE, account);
-    }
-
-    function removeOperatorRole(address account) public virtual onlyRole(DEFAULT_ADMIN_ROLE) {
-        revokeRole(PAUSER_ROLE, account);
-    }
-
-    function setPauserRole(address account) public virtual onlyRole(DEFAULT_ADMIN_ROLE) {
-        grantRole(PAUSER_ROLE, account);
-    }
-
-    function removePauserRole(address account) public virtual onlyRole(DEFAULT_ADMIN_ROLE) {
-        revokeRole(PAUSER_ROLE, account);
-    }
-
-    function setEvaluatorRole(address account) public virtual onlyRole(OPERATOR_ROLE) {
-        grantRole(EVALUATOR_ROLE, account);
-    }
-
-    function removeEvaluatorRole(address account) public virtual onlyRole(OPERATOR_ROLE) {
-        revokeRole(EVALUATOR_ROLE, account);
-    }
-
+    /**
+    * @dev change contract's admin to a new address
+    */
     function changeContractAdmin(address newAdmin) public virtual onlyRole(DEFAULT_ADMIN_ROLE) {
         // Check if the new Admin address is a contract address
         require(!newAdmin.isContract(), "New admin must not be a contract");

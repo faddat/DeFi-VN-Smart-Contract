@@ -1,15 +1,26 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "./IDFY_Physical_NFTs.sol";
 import "./DFY-AccessControl.sol";
 
-contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessControl, PausableUpgradeable, ERC1155BurnableUpgradeable {
+contract DFY_Physical_NFTs is 
+    IDFY_Physical_NFTs,
+    Initializable,
+    UUPSUpgradeable, 
+    ERC1155Upgradeable, 
+    DFYAccessControl, 
+    PausableUpgradeable, 
+    ERC1155BurnableUpgradeable 
+{
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using AddressUpgradeable for address;
 
@@ -62,7 +73,7 @@ contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessContr
     );
 
     // Modifier check contract valuation call mint NFT token
-    modifier onlyEvaluation(){
+    modifier onlyEvaluation {
         require(msg.sender == evaluationContract, 'Cant mint.');
         _;
     }
@@ -88,7 +99,7 @@ contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessContr
 
 
     function _setBaseURI(string memory _uri) internal {
-        require(bytes(_uri).length > 0, "BaseURI must not be blank");
+        require(bytes(_uri).length > 0, "Blank baseURI");
         _tokenBaseUri = _uri;
     }
 
@@ -100,22 +111,22 @@ contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessContr
         return bytes(tokenIdListToCID[tokenId]).length > 0;
     }
 
-    function setBaseURI(string memory _uri) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setBaseURI(string memory _uri) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setBaseURI(_uri);
     }
 
     function uri(uint tokenId) public view virtual override returns (string memory) {
-        require(_exists(tokenId), "URI query for nonexistent token");
+        require(_exists(tokenId), "Invalid token");
 
         string memory baseUri = _baseURI();
         return bytes(baseUri).length > 0 ? string(abi.encodePacked(baseUri, tokenIdListToCID[tokenId])) : "";
     }
 
-    function pause() public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _pause();
     }
 
-    function unpause() public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
     }
 
@@ -123,12 +134,12 @@ contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessContr
     * @dev set address evaluation contract
     * @param _evaluationContract is address evaluation contract
     */
-    function setEvaluationContract(address _evaluationContract) public onlyRole(DEFAULT_ADMIN_ROLE){
+    function setEvaluationContract(address _evaluationContract) external onlyRole(DEFAULT_ADMIN_ROLE){
         // Check address different address(0)
-        require(_evaluationContract != address(0), "Address is different address(0).");
+        require(_evaluationContract != address(0), "Zero address.");
 
         // Check address is contract
-        require(_evaluationContract.isContract(), "Address isnt contract.");
+        require(_evaluationContract.isContract(), "Not a contract.");
 
         // Set address evaluation
         evaluationContract = _evaluationContract;
@@ -143,9 +154,17 @@ contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessContr
     * @param _cid is cid of NFT token
     * @param _data is data of NFT token
     */
-    function mint(address _assetOwner, address _evaluator, uint256 _evaluatontId, uint256 _amount, string memory _cid, bytes memory _data) 
-        public
-        onlyEvaluation() 
+    function mint(
+        address _assetOwner, 
+        address _evaluator, 
+        uint256 _evaluatontId, 
+        uint256 _amount, 
+        string memory _cid, 
+        bytes memory _data
+    ) 
+        external
+        override 
+        onlyEvaluation 
         returns (uint256 tokenId)
     {
         // Gennerate tokenId
@@ -180,10 +199,16 @@ contract DFY_Physical_NFTs is UUPSUpgradeable,ERC1155Upgradeable, DFYAccessContr
         return tokenId;
     }
 
-    function _beforeTokenTransfer(address operator, address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data)
-        internal
-        whenNotPaused
-        override
+    function _beforeTokenTransfer(
+        address operator, 
+        address from, 
+        address to, 
+        uint256[] memory ids, 
+        uint256[] memory amounts, 
+        bytes memory data
+    ) 
+        internal 
+        override whenNotPaused 
     {
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
     }

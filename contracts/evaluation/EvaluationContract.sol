@@ -1,24 +1,29 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
 
-// import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-// import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
-// import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+pragma solidity ^0.8.4;
+
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./DFY-AccessControl.sol";
-import "./DFY_Physical_NFTs.sol";
+import "./IDFY_Physical_NFTs.sol";
 import "./IBEP20.sol";
 
 
 
-contract AssetEvaluation is ReentrancyGuardUpgradeable,UUPSUpgradeable,ERC1155HolderUpgradeable, PausableUpgradeable, DFYAccessControl{
+contract AssetEvaluation is 
+    Initializable,
+    UUPSUpgradeable, 
+    ReentrancyGuardUpgradeable,
+    ERC1155HolderUpgradeable, 
+    PausableUpgradeable, 
+    DFYAccessControl
+{
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using AddressUpgradeable for address;
     using SafeMathUpgradeable for uint;
@@ -30,7 +35,7 @@ contract AssetEvaluation is ReentrancyGuardUpgradeable,UUPSUpgradeable,ERC1155Ho
     IBEP20 public ibepDFY;
 
     // NFT Token;
-    DFY_Physical_NFTs public dfy_physical_nfts;
+    IDFY_Physical_NFTs public dfy_physical_nfts;
 
     // Address admin
     address private addressAdmin;
@@ -135,7 +140,7 @@ contract AssetEvaluation is ReentrancyGuardUpgradeable,UUPSUpgradeable,ERC1155Ho
 
     // Modifier check address call function
     modifier OnlyEOA() {
-        require(!msg.sender.isContract(), "Caller address must not be a contract address.");
+        require(!msg.sender.isContract(), "Calling from a contract");
         _;
     }
 
@@ -146,7 +151,7 @@ contract AssetEvaluation is ReentrancyGuardUpgradeable,UUPSUpgradeable,ERC1155Ho
 
     // Function set asset base uri
     function _setAssetBaseURI(string memory _uri) internal {
-        require(bytes(_uri).length > 0, "Asset data URI must not be empty.");
+        require(bytes(_uri).length > 0, "Empty asset URI");
         _assetBaseUri = _uri;
     }
 
@@ -166,13 +171,13 @@ contract AssetEvaluation is ReentrancyGuardUpgradeable,UUPSUpgradeable,ERC1155Ho
     */
     function setNftContractAddress(address _newAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // Verify if the new address is a contract or not
-        require(_newAddress.isContract(), "Input address is not a contract address.");
+        require(_newAddress.isContract(), "Not a contract");
         
         _setNFTAddress(_newAddress);
     }
 
     function _setNFTAddress(address _newAddress) internal {
-        dfy_physical_nfts = DFY_Physical_NFTs(_newAddress);
+        dfy_physical_nfts = IDFY_Physical_NFTs(_newAddress);
     }
 
     /**
@@ -181,7 +186,7 @@ contract AssetEvaluation is ReentrancyGuardUpgradeable,UUPSUpgradeable,ERC1155Ho
     */
     function setTokenIBEP20Address(address _newAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // Verify if the new address is a contract or not
-        require(_newAddress.isContract(), "Input address is not a contract address.");
+        require(_newAddress.isContract(), "Not a contract");
         
         _setTokenIBEP20Address(_newAddress);
     }
@@ -312,31 +317,31 @@ contract AssetEvaluation is ReentrancyGuardUpgradeable,UUPSUpgradeable,ERC1155Ho
     * @param _assetId is the ID of the asset in AssetList
     * @param _evaluationId is the look up index of the Evaluation data in EvaluationsByAsset list
     */
-    function _checkDataAcceptOrReject(uint256 _assetId,uint256 _evaluationId) internal view returns (bool) {
+    function _checkDataAcceptOrReject(uint256 _assetId, uint256 _evaluationId) internal view returns (bool) {
         
         // Check creator is address 0
-        require(msg.sender!=address(0), "Caller different address(0).");
+        require(msg.sender != address(0), "ZERO_ADDRESS"); // msg.sender must not be the zero address
 
         // Check asset id
-        require(_assetId >=0, "Asset does not exist.");
+        require(_assetId >= 0, "INVALID_ASSET"); // assetId must not be zero
 
         // Check evaluation index
-        require(_evaluationId >=0, "Evaluation does not exist.");
+        require(_evaluationId >= 0, "INVALID_EVA"); // evaluationID must not be zero
 
         // Get asset to asset id;
         Asset memory _asset = assetList[_assetId];
 
         // Check asset to creator
-        require(_asset.creator == msg.sender, "Can only accept or reject your evaluation asset.");
+        require(_asset.creator == msg.sender, "NOT_THE_OWNER"); // msg.sender must be the creator of the asset
 
         // Check asset is exists
-        require(_asset.status == AssetStatus.OPEN, "Asset does not allow evaluation.");
+        require(_asset.status == AssetStatus.OPEN, "EVA_NOT_ALLOWED"); // asset status must be Open
 
         // approve an evaluation by looking for its index in the array.
         Evaluation memory _evaluation = evaluationList[_evaluationId];
 
         // Check status evaluation
-        require(_evaluation.status == EvaluationStatus.EVALUATED, "Not accept or reject evaluation.");
+        require(_evaluation.status == EvaluationStatus.EVALUATED, "ASSET_NOT_EVALUATED"); // evaluation status must be Evaluated
         
         return true;
     }
@@ -415,7 +420,16 @@ contract AssetEvaluation is ReentrancyGuardUpgradeable,UUPSUpgradeable,ERC1155Ho
     * @param _nftCID is the NFT CID when mint token
     */
 
-    function createNftToken(uint256 _assetId, uint256 _evaluationId, uint256 _mintingFee, string memory _nftCID ) external OnlyEOA onlyRole(EVALUATOR_ROLE) nonReentrant {
+    function createNftToken(
+        uint256 _assetId, 
+        uint256 _evaluationId, 
+        uint256 _mintingFee, 
+        string memory _nftCID
+    )
+        external 
+        OnlyEOA 
+        onlyRole(EVALUATOR_ROLE) 
+        nonReentrant {
 
         // Check minting fee
         require(_mintingFee > 0, "Not enough fee.");
@@ -482,7 +496,7 @@ contract AssetEvaluation is ReentrancyGuardUpgradeable,UUPSUpgradeable,ERC1155Ho
     */ 
     function addEvaluator(address _account) external onlyRole(OPERATOR_ROLE) {
         // Grant Evaluator role
-        setEvaluatorRole(_account);
+        grantRole(EVALUATOR_ROLE, _account);
 
         // Approve
         emit ApproveEvaluator(_account);
