@@ -164,7 +164,7 @@ contract PawnNFTContract is
         uint256 paidPenaltyFeeAmount,
         uint256 paidInterestFeeAmount,
         uint256 prepaidAmount,
-        uint256 paymentRequestId
+        uint256 UID
     );
 
     //liquidity & defaul
@@ -695,7 +695,8 @@ contract PawnNFTContract is
         uint256 _contractId,
         uint256 _paidPenaltyAmount,
         uint256 _paidInterestAmount,
-        uint256 _paidLoanAmount
+        uint256 _paidLoanAmount,
+        uint256 _UID
     ) external override whenNotPaused 
     {
         // Get contract & payment request
@@ -749,7 +750,7 @@ contract PawnNFTContract is
             _feePenalty, 
             _feeInterest, 
             _prepaidFee,
-            _paymentRequest.requestId
+            _UID
         );
 
         // If remaining loan = 0 => paidoff => execute release collateral
