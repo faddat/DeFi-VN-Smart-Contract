@@ -14,6 +14,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../evaluation/DFY-AccessControl.sol";
 import "../evaluation/IDFY_Physical_NFTs.sol";
+import "../evaluation/DFY_Physical_NFTs.sol";
 import "../evaluation/EvaluationContract.sol";
 import "../evaluation/IBEP20.sol";
 import "./IPawnNFT.sol";
@@ -459,8 +460,8 @@ contract PawnNFTContract is
         for (uint256 i = 0; i < collateralOfferList.offerIdList.length; i++) {
             uint256 thisOfferId = collateralOfferList.offerIdList[i];
             if (thisOfferId != _offerId) {
-                Offer storage thisOffer = collateralOfferList.offerMapping[thisOfferId];
-                emit OfferEvent(thisOfferId, _nftCollateralId, thisOffer,_UID);
+                //Offer storage thisOffer = collateralOfferList.offerMapping[thisOfferId];
+                emit CancelOfferEvent(thisOfferId, _nftCollateralId,offer.owner,_UID);
                 delete collateralOfferList.offerMapping[thisOfferId];
             }
         }
@@ -648,7 +649,7 @@ contract PawnNFTContract is
     /**
     * @dev Perform contract liquidation
     * @param  _contractId is id of contract
-    * @param  _reasonType is id of contract
+    * @param  _reasonType is type of reason for liquidation of the contract
     */
     function _liquidationExecution(
         uint256 _contractId,
@@ -664,7 +665,7 @@ contract PawnNFTContract is
         Collateral storage _collateral = collaterals[_contract.nftCollateralId];
         _collateral.status = CollateralStatus.COMPLETED;           
 
-        // Emit Event ContractLiquidedEvent & PaymentRequest event
+        // Emit Event ContractLiquidedEvent
         emit ContractLiquidedEvent(
             _contractId,
             0,
@@ -675,7 +676,30 @@ contract PawnNFTContract is
         PawnNFTLib.safeTranferNFTToken(_contract.terms.nftCollateralAsset, address(this), _contract.terms.lender,_contract.terms.nftTokenId, _contract.terms.nftCollateralAmount );
     }
 
-    function _returnCollateralToBorrowerAndCloseContract(uint256 _contractId) internal {
+    /**
+    * @dev return collateral to borrower and close contract
+    * @param  _contractId is id of contract
+    */
+    function _returnCollateralToBorrowerAndCloseContract(
+        uint256 _contractId
+    ) internal 
+    {
+        Contract storage _contract = contracts[_contractId];
+        Collateral storage _collateral = collaterals[_contract.nftCollateralId];
+
+        // Execute: Update status of contract to COMPLETE, collateral to COMPLETE
+        _contract.status = ContractStatus.COMPLETED;
+        PaymentRequest[] storage _paymentRequests = contractPaymentRequestMapping[_contractId];
+        PaymentRequest storage _lastPaymentRequest = _paymentRequests[_paymentRequests.length - 1];
+        _lastPaymentRequest.status = PaymentRequestStatusEnum.COMPLETE;
+        _collateral.status = CollateralStatus.COMPLETED;
+
+        // Emit Event ContractLiquidedEvent
+        emit LoanContractCompletedEvent(_contractId);
+
+        // Execute: Transfer collateral to borrower
+        PawnNFTLib.safeTranferNFTToken(_contract.terms.nftCollateralAsset,  address(this), _contract.terms.borrower, _contract.terms.nftTokenId,  _contract.terms.nftCollateralAmount );
+
     }
 
     /**
@@ -690,7 +714,7 @@ contract PawnNFTContract is
         uint256 _paidPenaltyAmount,
         uint256 _paidInterestAmount,
         uint256 _paidLoanAmount
-    ) external override whenNotPaused onlyRole(OPERATOR_ROLE) 
+    ) external override whenNotPaused 
     {
         // Get contract & payment request
         Contract storage _contract = contractMustActive(_contractId);
@@ -780,7 +804,25 @@ contract PawnNFTContract is
         whenNotPaused
         onlyRole(OPERATOR_ROLE)
     {
-        //uint256 valueOfCollateralLiquidationThreshold = _contract.terms.nftCollateralEvaluatedValue * _contract.terms.liquidityThreshold / (100 * ZOOM);
+    //     // Validate: Contract must active
+    //     Contract storage _contract = contractMustActive(_contractId);
+    //     Collateral storage _collateral = collaterals[_contract.nftCollateralId];
+
+    //     //get Address of EvaluationContract 
+    //     (address _evaluationContract, uint256 _evaluationId ) = DFY_Physical_NFTs(_collateral.nftContract).tokenIdOfEvaluation(_collateral.nftTokenId);
+        
+    //     //get price of Evaluation from EvaluationContract
+    //     uint256 price = AssetEvaluation(_evaluationContract).tokenIdByEvaluation(_collateral.nftTokenId)[0];
+        
+    //     (uint256 remainingRepayment, uint256 remainingLoan) = calculateRemainingLoanAndRepaymentFromContract(_contractId, _contract);
+    //     uint256 valueOfRemainingRepayment = (_collateralPerRepaymentTokenExchangeRate * remainingRepayment) / ZOOM;
+    //     uint256 valueOfRemainingLoan = (_collateralPerLoanAssetExchangeRate * remainingLoan) / ZOOM;
+    //     uint256 valueOfCollateralLiquidationThreshold = price * _contract.terms.liquidityThreshold / (100 * ZOOM);
+
+    //     require(valueOfRemainingLoan + valueOfRemainingRepayment >= valueOfCollateralLiquidationThreshold, 'under-threshold');
+
+    //     // Execute: call internal liquidation
+    //     _liquidationExecution(_contractId, ContractLiquidedReasonType.RISK);
     }
 
     /**
