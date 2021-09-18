@@ -770,12 +770,12 @@ contract PawnNFTContract is
         address _evaluationContract = DFY_Physical_NFTs(_collateral.nftContract).tokenIdOfEvaluation(_collateral.nftTokenId)[0];
         
         //get price of Evaluation from EvaluationContract
-        uint256 _EvaluationValue = AssetEvaluation(_evaluationContract).tokenIdByEvaluation(_collateral.nftTokenId)[5];
+        uint256 _evaluationValue = AssetEvaluation(_evaluationContract).tokenIdByEvaluation(_collateral.nftTokenId)[5];
         
         (uint256 remainingRepayment, uint256 remainingLoan) = calculateRemainingLoanAndRepaymentFromContract(_contractId, _contract);
         uint256 valueOfRemainingRepayment = (_collateralPerRepaymentTokenExchangeRate * remainingRepayment) / ZOOM;
         uint256 valueOfRemainingLoan = (_collateralPerLoanAssetExchangeRate * remainingLoan) / ZOOM;
-        //uint256 valueOfCollateralLiquidationThreshold = _EvaluationValue * _contract.terms.liquidityThreshold / (100 * ZOOM);
+        uint256 valueOfCollateralLiquidationThreshold = _evaluationValue * _contract.terms.liquidityThreshold / (100 * ZOOM);
 
         require(valueOfRemainingLoan + valueOfRemainingRepayment >= valueOfCollateralLiquidationThreshold, 'under-threshold');
 
