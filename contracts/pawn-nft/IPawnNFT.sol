@@ -55,7 +55,8 @@ interface IPawnNFT {
     * @param _nftCollateralId is id of collateral
     */
     function withdrawCollateral(
-        uint256 _nftCollateralId
+        uint256 _nftCollateralId,
+        uint256 _UID
     ) external;
 
     /** ========================= OFFER ============================= */
@@ -112,7 +113,8 @@ interface IPawnNFT {
     */
     function cancelOffer(
         uint256 _offerId,
-        uint256 _nftCollateralId
+        uint256 _nftCollateralId,
+        uint256 _UID
     ) external;
 
     /** ========================= ACCEPT OFFER ============================= */
