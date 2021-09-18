@@ -14,6 +14,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../evaluation/DFY-AccessControl.sol";
 import "../evaluation/IDFY_Physical_NFTs.sol";
+import "../evaluation/DFY_Physical_NFTs.sol";
 import "../evaluation/EvaluationContract.sol";
 import "../evaluation/IBEP20.sol";
 import "./IPawnNFT.sol";
@@ -421,7 +422,7 @@ contract PawnNFTContract is
         for (uint256 i = 0; i < collateralOfferList.offerIdList.length; i++) {
             uint256 thisOfferId = collateralOfferList.offerIdList[i];
             if (thisOfferId != _offerId) {
-                Offer storage thisOffer = collateralOfferList.offerMapping[thisOfferId];
+                //Offer storage thisOffer = collateralOfferList.offerMapping[thisOfferId];
                 emit CancelOfferEvent(thisOfferId, _nftCollateralId,offer.owner);
                 delete collateralOfferList.offerMapping[thisOfferId];
             }
@@ -645,6 +646,9 @@ contract PawnNFTContract is
         uint256 _contractId
     ) internal 
     {
+        Contract storage _contract = contracts[_contractId];
+        Collateral storage _collateral = collaterals[_contract.nftCollateralId];
+
         // Execute: Update status of contract to COMPLETE, collateral to COMPLETE
         _contract.status = ContractStatus.COMPLETED;
         PaymentRequest[] storage _paymentRequests = contractPaymentRequestMapping[_contractId];
@@ -762,25 +766,25 @@ contract PawnNFTContract is
         whenNotPaused
         onlyRole(OPERATOR_ROLE)
     {
-        // Validate: Contract must active
-        Contract storage _contract = contractMustActive(_contractId);
-        Collateral storage _collateral = collaterals[_contract.collateralId];
+    //     // Validate: Contract must active
+    //     Contract storage _contract = contractMustActive(_contractId);
+    //     Collateral storage _collateral = collaterals[_contract.nftCollateralId];
 
-        //get Address of EvaluationContract 
-        address _evaluationContract = DFY_Physical_NFTs(_collateral.nftContract).tokenIdOfEvaluation(_collateral.nftTokenId)[0];
+    //     //get Address of EvaluationContract 
+    //     (address _evaluationContract, uint256 _evaluationId ) = DFY_Physical_NFTs(_collateral.nftContract).tokenIdOfEvaluation(_collateral.nftTokenId);
         
-        //get price of Evaluation from EvaluationContract
-        uint256 _evaluationValue = AssetEvaluation(_evaluationContract).tokenIdByEvaluation(_collateral.nftTokenId)[5];
+    //     //get price of Evaluation from EvaluationContract
+    //     uint256 price = AssetEvaluation(_evaluationContract).tokenIdByEvaluation(_collateral.nftTokenId)[0];
         
-        (uint256 remainingRepayment, uint256 remainingLoan) = calculateRemainingLoanAndRepaymentFromContract(_contractId, _contract);
-        uint256 valueOfRemainingRepayment = (_collateralPerRepaymentTokenExchangeRate * remainingRepayment) / ZOOM;
-        uint256 valueOfRemainingLoan = (_collateralPerLoanAssetExchangeRate * remainingLoan) / ZOOM;
-        uint256 valueOfCollateralLiquidationThreshold = _evaluationValue * _contract.terms.liquidityThreshold / (100 * ZOOM);
+    //     (uint256 remainingRepayment, uint256 remainingLoan) = calculateRemainingLoanAndRepaymentFromContract(_contractId, _contract);
+    //     uint256 valueOfRemainingRepayment = (_collateralPerRepaymentTokenExchangeRate * remainingRepayment) / ZOOM;
+    //     uint256 valueOfRemainingLoan = (_collateralPerLoanAssetExchangeRate * remainingLoan) / ZOOM;
+    //     uint256 valueOfCollateralLiquidationThreshold = price * _contract.terms.liquidityThreshold / (100 * ZOOM);
 
-        require(valueOfRemainingLoan + valueOfRemainingRepayment >= valueOfCollateralLiquidationThreshold, 'under-threshold');
+    //     require(valueOfRemainingLoan + valueOfRemainingRepayment >= valueOfCollateralLiquidationThreshold, 'under-threshold');
 
-        // Execute: call internal liquidation
-        _liquidationExecution(_contractId, ContractLiquidedReasonType.RISK);
+    //     // Execute: call internal liquidation
+    //     _liquidationExecution(_contractId, ContractLiquidedReasonType.RISK);
     }
 
     /**
