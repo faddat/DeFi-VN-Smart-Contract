@@ -292,7 +292,7 @@ contract PawnNFTContract is
             for (uint i = 0; i < collateralOfferList.offerIdList.length; i ++) {
                 uint256 offerId = collateralOfferList.offerIdList[i];
                 Offer storage offer = collateralOfferList.offerMapping[offerId];
-                emit CancelOfferEvent(offerId, _nftCollateralId, offer.owner, 0);
+                emit CancelOfferEvent(offerId, _nftCollateralId, offer.owner, _UID);
             }
             delete collateralOffersMapping[_nftCollateralId];
         }
