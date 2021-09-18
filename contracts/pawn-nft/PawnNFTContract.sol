@@ -35,6 +35,8 @@ contract PawnNFTContract is
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    AssetEvaluation assetEvaluation;
+
     mapping (address => uint256) public whitelistCollateral;
     address public operator;
     address public feeWallet;
@@ -234,16 +236,13 @@ contract PawnNFTContract is
         */
 
         // Check white list nft contract
-        require(whitelistCollateral[_nftContract] == 1, "NOT_SUPPORT.");
+        require(whitelistCollateral[_nftContract] == 1, "not_sp");
 
         // Check loan amount
-        require(_loanAmount > 0, "ZERO_LOAN_AMOUNT.");
+        require(_loanAmount > 0 && _expectedDurationQty > 0, "enougth_amount_duration");
 
         // Check loan asset
-        require(_loanAsset != address(0), "ZERO_ADDRESS_LOAN_ASSET.");
-
-        // Check duration quantity
-        require(_expectedDurationQty > 0, "ZERO_DURATION.");
+        require(_loanAsset != address(0), "zero_address");
 
         // Create Collateral Id
         uint256 collateralId = numberCollaterals.current();
@@ -279,10 +278,10 @@ contract PawnNFTContract is
         Collateral storage _collateral = collaterals[_nftCollateralId];
 
         // Check owner collateral
-        require(_collateral.owner == msg.sender, "NOT_OWNER");
+        require(_collateral.owner == msg.sender, "not_owner");
 
         // Check status collateral
-        require(_collateral.status == CollateralStatus.OPEN, "COLLATERAL_NOT_OPEN.");
+        require(_collateral.status == CollateralStatus.OPEN, "collateral_not_open");
 
         // Return NFT token to owner
         PawnNFTLib.safeTranferNFTToken(_collateral.nftContract, address(this), _collateral.owner, _collateral.nftTokenId, _collateral.nftTokenQuantity);
@@ -337,28 +336,20 @@ contract PawnNFTContract is
         Collateral storage _collateral = collaterals[_nftCollateralId];
 
         // Check owner collateral
-        require(_collateral.owner != msg.sender, "OFFER_OWNED_ASSET"); // You can not offer.
+        require(_collateral.owner != msg.sender, "not_owner"); // You can not offer.
 
         // Check status collateral
-        require(_collateral.status == CollateralStatus.OPEN, "OFFER_NOT_ALLOWED"); // You can not offer collateral.
+        require(_collateral.status == CollateralStatus.OPEN, "not_offer"); // You can not offer collateral.
 
         // Check approve 
-        require(IERC20Upgradeable(_collateral.loanAsset).allowance(msg.sender, address(this)) >= _loanAmount, "INSUFFICIENT_BALANCE"); // You not approve.
+        require(IERC20Upgradeable(_collateral.loanAsset).allowance(msg.sender, address(this)) >= _loanAmount, "not_approve"); // You not approve.
 
         // Check repayment asset
-        require(_repaymentAsset != address(0), "INVALID_REPAYMENT"); // Address repayment asset must be different address(0).
+        require(_repaymentAsset != address(0), "zero_address"); // Address repayment asset must be different address(0).
 
         // Check loan amount
-        require(_loanToValue > 0, "ZERO_LTV"); // Loan to value must be grean that 0.
+        require(_loanToValue > 0 && _loanAmount > 0 && _interest > 0 && _liquidityThreshold > _loanToValue, "not_enougth"); // Loan to value must be grean that 0.
 
-        // Check loan amount
-        require(_loanAmount > 0, "ZERO_LOAN"); //Loan amount must be grean that 0.
-
-        // Check interest
-        require(_interest > 0, "ZERO_INTEREST"); //Interest must be grean that 0.
-
-        // Check duration liquidityThreshold to LTV
-        require(_liquidityThreshold > _loanToValue, "INVALID_LIQUIDITY_THRESHOLD"); // Liquidity threshold must be grean that LTV.
         
         // Gennerate Offer Id
         uint256 offerId = numberOffers.current();
@@ -398,16 +389,16 @@ contract PawnNFTContract is
         CollateralOfferList storage _collateralOfferList = collateralOffersMapping[_nftCollateralId];
 
         // Check Offer Collater isnit
-        require(_collateralOfferList.isInit == true, 'COLLATERAL_INIT_FALSE.');
+        require(_collateralOfferList.isInit == true, 'collateral_false');
 
         // Get offer
         Offer storage _offer = _collateralOfferList.offerMapping[_offerId];
 
         // Check owner offer
-        require(_offer.owner == msg.sender, 'NOT_OWNER.');
+        require(_offer.owner == msg.sender, 'not_offer');
 
         // Check status offer
-        require(_offer.status == OfferStatus.PENDING, 'NOT_CANCEL.');
+        require(_offer.status == OfferStatus.PENDING, 'not_cancel');
 
         delete _collateralOfferList.offerMapping[_offerId];
         for (uint i = 0; i < _collateralOfferList.offerIdList.length; i ++) {
@@ -804,25 +795,27 @@ contract PawnNFTContract is
         whenNotPaused
         onlyRole(OPERATOR_ROLE)
     {
-    //     // Validate: Contract must active
-    //     Contract storage _contract = contractMustActive(_contractId);
-    //     Collateral storage _collateral = collaterals[_contract.nftCollateralId];
+        // Validate: Contract must active
+        Contract storage _contract = contractMustActive(_contractId);
+        Collateral storage _collateral = collaterals[_contract.nftCollateralId];
 
-    //     //get Address of EvaluationContract 
-    //     (address _evaluationContract, uint256 _evaluationId ) = DFY_Physical_NFTs(_collateral.nftContract).tokenIdOfEvaluation(_collateral.nftTokenId);
+        //get Address of EvaluationContract 
+        (address _evaluationContract, ) = DFY_Physical_NFTs(_collateral.nftContract).tokenIdOfEvaluation(_collateral.nftTokenId);
         
-    //     //get price of Evaluation from EvaluationContract
-    //     uint256 price = AssetEvaluation(_evaluationContract).tokenIdByEvaluation(_collateral.nftTokenId)[0];
-        
-    //     (uint256 remainingRepayment, uint256 remainingLoan) = calculateRemainingLoanAndRepaymentFromContract(_contractId, _contract);
-    //     uint256 valueOfRemainingRepayment = (_collateralPerRepaymentTokenExchangeRate * remainingRepayment) / ZOOM;
-    //     uint256 valueOfRemainingLoan = (_collateralPerLoanAssetExchangeRate * remainingLoan) / ZOOM;
-    //     uint256 valueOfCollateralLiquidationThreshold = price * _contract.terms.liquidityThreshold / (100 * ZOOM);
+          assetEvaluation = AssetEvaluation(_evaluationContract);
 
-    //     require(valueOfRemainingLoan + valueOfRemainingRepayment >= valueOfCollateralLiquidationThreshold, 'under-threshold');
+        // get Evaluation from address of EvaluationContract
+        (, , , , ,uint256 price ,) = assetEvaluation.tokenIdByEvaluation(_collateral.nftTokenId);
 
-    //     // Execute: call internal liquidation
-    //     _liquidationExecution(_contractId, ContractLiquidedReasonType.RISK);
+        (uint256 remainingRepayment, uint256 remainingLoan) = calculateRemainingLoanAndRepaymentFromContract(_contractId, _contract);
+        uint256 valueOfRemainingRepayment = (_collateralPerRepaymentTokenExchangeRate * remainingRepayment) / ZOOM;
+        uint256 valueOfRemainingLoan = (_collateralPerLoanAssetExchangeRate * remainingLoan) / ZOOM;
+        uint256 valueOfCollateralLiquidationThreshold = price * _contract.terms.liquidityThreshold / (100 * ZOOM);
+
+        require(valueOfRemainingLoan + valueOfRemainingRepayment >= valueOfCollateralLiquidationThreshold, 'under-threshold');
+
+        // Execute: call internal liquidation
+        _liquidationExecution(_contractId, ContractLiquidedReasonType.RISK);
     }
 
     /**
