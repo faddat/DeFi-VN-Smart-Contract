@@ -176,6 +176,13 @@ contract PawnNFTContract is
         uint256 contractId
     );
 
+    event CancelOfferEvent(
+        uint256 offerId,
+        uint256 nftCollateralId,
+        address offerOwner,
+        uint256 UID
+    );
+
     // Total collateral
     CountersUpgradeable.Counter public numberCollaterals;
 
@@ -226,22 +233,16 @@ contract PawnNFTContract is
         */
 
         // Check white list nft contract
-        require(whitelistCollateral[_nftContract] == 1, "Not support collateral.");
-
-        // Check NFT token id
-        require(_nftTokenId >= 0, "Token id dose not exists.");
+        require(whitelistCollateral[_nftContract] == 1, "NOT_SUPPORT.");
 
         // Check loan amount
-        require(_loanAmount > 0, "Loan amount must be greater than 0.");
+        require(_loanAmount > 0, "ZERO_LOAN_AMOUNT.");
 
         // Check loan asset
-        require(_loanAsset != address(0), "Address loan must be different address(0).");
-
-        // Check quantity NFT token
-        require(_nftTokenQuantity > 0, "Token quantity must be grean than 0.");
+        require(_loanAsset != address(0), "ZERO_ADDRESS_LOAN_ASSET.");
 
         // Check duration quantity
-        require(_expectedDurationQty > 0, "Duration quantity must be grean than 0.");
+        require(_expectedDurationQty > 0, "ZERO_DURATION.");
 
         // Create Collateral Id
         uint256 collateralId = numberCollaterals.current();
@@ -270,9 +271,39 @@ contract PawnNFTContract is
     }
 
     function withdrawCollateral(
-        uint256 _nftCollateralId
+        uint256 _nftCollateralId,
+        uint256 _UID
     ) external override whenNotPaused
     {
+        Collateral storage _collateral = collaterals[_nftCollateralId];
+
+        // Check owner collateral
+        require(_collateral.owner == msg.sender, "NOT_OWNER");
+
+        // Check status collateral
+        require(_collateral.status == CollateralStatus.OPEN, "COLLATERAL_NOT_OPEN.");
+
+        // Return NFT token to owner
+        PawnNFTLib.safeTranferNFTToken(_collateral.nftContract, address(this), _collateral.owner, _collateral.nftTokenId, _collateral.nftTokenQuantity);
+
+        // Remove relation of collateral and offers
+        CollateralOfferList storage collateralOfferList = collateralOffersMapping[_nftCollateralId];
+        if (collateralOfferList.isInit == true) {
+            for (uint i = 0; i < collateralOfferList.offerIdList.length; i ++) {
+                uint256 offerId = collateralOfferList.offerIdList[i];
+                Offer storage offer = collateralOfferList.offerMapping[offerId];
+                emit CancelOfferEvent(offerId, _nftCollateralId, offer.owner, 0);
+            }
+            delete collateralOffersMapping[_nftCollateralId];
+        }
+
+        // Update collateral status
+        _collateral.status = CollateralStatus.CANCEL;
+
+        emit CollateralEvent(_nftCollateralId, _collateral, _UID);
+
+
+        delete collaterals[_nftCollateralId];
 
     }
 
@@ -301,8 +332,17 @@ contract PawnNFTContract is
         uint256 _UID
     ) external override whenNotPaused
     {
-        // Check NFT collateral id
-        require(_nftCollateralId >= 0, "INVALID_NFT"); // NFT token ID must be greater than 0
+        // Get collateral
+        Collateral storage _collateral = collaterals[_nftCollateralId];
+
+        // Check owner collateral
+        require(_collateral.owner != msg.sender, "OFFER_OWNED_ASSET"); // You can not offer.
+
+        // Check status collateral
+        require(_collateral.status == CollateralStatus.OPEN, "OFFER_NOT_ALLOWED"); // You can not offer collateral.
+
+        // Check approve 
+        require(IERC20Upgradeable(_collateral.loanAsset).allowance(msg.sender, address(this)) >= _loanAmount, "INSUFFICIENT_BALANCE"); // You not approve.
 
         // Check repayment asset
         require(_repaymentAsset != address(0), "INVALID_REPAYMENT"); // Address repayment asset must be different address(0).
@@ -316,29 +356,8 @@ contract PawnNFTContract is
         // Check interest
         require(_interest > 0, "ZERO_INTEREST"); //Interest must be grean that 0.
 
-        // Check duration liquidityThreshold
-        require(_liquidityThreshold > 0, "ZERO_LIQUIDITY_THRESHOLD"); //Liquidity threshold must be grean that 0.
-
         // Check duration liquidityThreshold to LTV
         require(_liquidityThreshold > _loanToValue, "INVALID_LIQUIDITY_THRESHOLD"); // Liquidity threshold must be grean that LTV.
-
-        // Check loan duration type;
-        require(_loanDurationType == LoanDurationType.WEEK || _loanDurationType == LoanDurationType.MONTH, "INVALID_LOAN_DURATION"); // Loan duration type does not exists.
-
-        // Check repayment cycle type
-        require(_repaymentCycleType == LoanDurationType.WEEK || _repaymentCycleType == LoanDurationType.MONTH, "INVALID_REPAYMENT_CYCLE"); // Loan duration type does not exists.
-
-        // Get collateral
-        Collateral storage _collateral = collaterals[_nftCollateralId];
-
-        // Check owner collateral
-        require(_collateral.owner != msg.sender, "OFFER_OWNED_ASSET"); // You can not offer.
-
-        // Check status collateral
-        require(_collateral.status == CollateralStatus.OPEN, "OFFER_NOT_ALLOWED"); // You can not offer collateral.
-
-        // Check approve 
-        require(IERC20Upgradeable(_collateral.loanAsset).allowance(msg.sender, address(this)) >= _loanAmount, "INSUFFICIENT_BALANCE"); // You not approve.
         
         // Gennerate Offer Id
         uint256 offerId = numberOffers.current();
@@ -372,8 +391,33 @@ contract PawnNFTContract is
         emit OfferEvent(offerId, _nftCollateralId, _collateralOfferList.offerMapping[offerId], _UID);
     }
 
-    function cancelOffer(uint256 _offerId, uint256 _nftCollateralId) external override whenNotPaused {
+    function cancelOffer(uint256 _offerId, uint256 _nftCollateralId, uint256 _UID) external override whenNotPaused {
+        
+        // Get offer
+        CollateralOfferList storage _collateralOfferList = collateralOffersMapping[_nftCollateralId];
 
+        // Check Offer Collater isnit
+        require(_collateralOfferList.isInit == true, 'COLLATERAL_INIT_FALSE.');
+
+        // Get offer
+        Offer storage _offer = _collateralOfferList.offerMapping[_offerId];
+
+        // Check owner offer
+        require(_offer.owner == msg.sender, 'NOT_OWNER.');
+
+        // Check status offer
+        require(_offer.status == OfferStatus.PENDING, 'NOT_CANCEL.');
+
+        delete _collateralOfferList.offerMapping[_offerId];
+        for (uint i = 0; i < _collateralOfferList.offerIdList.length; i ++) {
+            if (_collateralOfferList.offerIdList[i] == _offerId) {
+                _collateralOfferList.offerIdList[i] = _collateralOfferList.offerIdList[_collateralOfferList.offerIdList.length - 1];
+                break;
+            }
+        }
+
+        delete _collateralOfferList.offerIdList[_collateralOfferList.offerIdList.length - 1];
+        emit CancelOfferEvent(_offerId, _nftCollateralId, msg.sender,_UID);
     }
 
     /** ================================ ACCEPT OFFER ============================= */
