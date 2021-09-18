@@ -139,12 +139,6 @@ contract PawnNFTContract is
         Offer data,
         uint256 UID
     );
-    
-    event CancelOfferEvent(
-        uint256 offerId,
-        uint256 nftCollateralId,
-        address offerOwner
-    );
 
     //accept offer
     event LoanContractCreatedEvent(
@@ -299,7 +293,7 @@ contract PawnNFTContract is
             for (uint i = 0; i < collateralOfferList.offerIdList.length; i ++) {
                 uint256 offerId = collateralOfferList.offerIdList[i];
                 Offer storage offer = collateralOfferList.offerMapping[offerId];
-                emit CancelOfferEvent(offerId, _nftCollateralId, offer.owner, 0);
+                emit CancelOfferEvent(offerId, _nftCollateralId, offer.owner, _UID);
             }
             delete collateralOffersMapping[_nftCollateralId];
         }
@@ -467,7 +461,7 @@ contract PawnNFTContract is
             uint256 thisOfferId = collateralOfferList.offerIdList[i];
             if (thisOfferId != _offerId) {
                 //Offer storage thisOffer = collateralOfferList.offerMapping[thisOfferId];
-                emit CancelOfferEvent(thisOfferId, _nftCollateralId,offer.owner);
+                emit CancelOfferEvent(thisOfferId, _nftCollateralId,offer.owner,_UID);
                 delete collateralOfferList.offerMapping[thisOfferId];
             }
         }
