@@ -201,7 +201,8 @@ interface IPawnNFT {
         uint256 _contractId,
         uint256 _paidPenaltyAmount,
         uint256 _paidInterestAmount,
-        uint256 _paidLoanAmount
+        uint256 _paidLoanAmount,
+        uint256 _UID
     ) external;
 
     function collateralRiskLiquidationExecution(
