@@ -61,9 +61,6 @@ library PawnNFTLib {
         // check address from
         require(_to != address(0), "Address to must be different address(0).");
 
-        // Check approve
-        require(IERC1155Upgradeable(_nftToken).isApprovedForAll(_from, address(this)), "You dont approve token.");
-
         // Check amount token
         require(_amount > 0, "Amount must be grean than 0.");
 
