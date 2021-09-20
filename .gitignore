@@ -356,3 +356,4 @@ MigrationBackup/
 contracts/pawn/PawnContractWithReputation_Flattened.sol
 contracts/pawn/PawnMockContract.sol
 .env
+contracts/ERC20Base
