@@ -38,14 +38,6 @@ contract DFY_Physical_NFTs is
     // TokenId => NFTEvaluation
     mapping (uint256 => NFTEvaluation) public tokenIdOfEvaluation;
 
-    // Mapping tokenId to owner
-    // TokentId => address
-    mapping(uint256 => address) public tokenIdByOwner;
-
-    // Mapping address by tokenId
-    // Owner => listTokenId
-    mapping (address => uint256[]) public tokenIdListByOwner;
-
     // Mapping evaluator to NFT 
     // Address evaluator => listTokenId
     mapping (address => uint256[] ) public tokenIdListByEvaluator;
@@ -178,12 +170,6 @@ contract DFY_Physical_NFTs is
             evaluationContract: msg.sender,
             evaluationId: _evaluatontId
         });
-
-        // Add mapping tokenId to address owner
-        tokenIdByOwner[tokenId] = _assetOwner;
-
-        // Add tokenId to list tokenId by owner
-        tokenIdListByOwner[_assetOwner].push(tokenId);
 
         // Add tokenId to list tokenId by evaluator
         tokenIdListByEvaluator[_evaluator].push(tokenId);
