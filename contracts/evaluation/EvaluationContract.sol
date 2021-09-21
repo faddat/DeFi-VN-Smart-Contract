@@ -78,6 +78,9 @@ contract AssetEvaluation is
     // TokenId => evaluation
     mapping (uint256 => Evaluation) public tokenIdByEvaluation;
 
+    // Mintting NFT fee
+    uint256 public _mintingNFTFee;
+
     function initialize(
         string memory _uri,
         address _dfy1155_physical_nft_address,
@@ -94,6 +97,8 @@ contract AssetEvaluation is
         _setTokenIBEP20Address(_ibep20_DFY_address);
 
         _setAddressAdmin(msg.sender);
+
+        _setMintingNFTFee(50 * 10 ** 18);
     }
 
     function _authorizeUpgrade(address) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
@@ -198,6 +203,17 @@ contract AssetEvaluation is
     
     function _setAddressAdmin(address _newAddress) internal {
         addressAdmin = _newAddress;
+    }
+
+    function setMintingNFTFee(uint256 _fee) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        // Verify if the new address is a contract or not
+        require(_fee > 0, "Not_Enough");
+        
+        _setMintingNFTFee(_fee);
+    }
+
+    function _setMintingNFTFee(uint256 _fee) internal {
+        _mintingNFTFee = _fee;
     }
 
     /**
@@ -416,23 +432,18 @@ contract AssetEvaluation is
     *
     * @param _assetId is the ID of the asset being converted to NFT token
     * @param _evaluationId is the look up index of the Evaluation data in the EvaluationsByAsset list
-    * @param _mintingFee is the fee when mint token
     * @param _nftCID is the NFT CID when mint token
     */
 
     function createNftToken(
         uint256 _assetId, 
-        uint256 _evaluationId, 
-        uint256 _mintingFee, 
+        uint256 _evaluationId,  
         string memory _nftCID
     )
         external 
         OnlyEOA 
         onlyRole(EVALUATOR_ROLE) 
         nonReentrant {
-
-        // Check minting fee
-        require(_mintingFee > 0, "Not enough fee.");
 
         // Check nft CID
         require(bytes(_nftCID).length > 0, "NFT CID not be empty.");
@@ -465,16 +476,16 @@ contract AssetEvaluation is
         require(msg.sender == _evaluation.evaluator, "Evaluator address does not match.");
 
         // Check balance
-        require(ibepDFY.balanceOf(msg.sender) >= (_mintingFee), "Your balance is not enough.");
+        require(ibepDFY.balanceOf(msg.sender) >= (_mintingNFTFee), "Your balance is not enough.");
         
 
-        require(ibepDFY.allowance(msg.sender, address(this)) >= (_mintingFee), "You have not approve DFY.");
+        require(ibepDFY.allowance(msg.sender, address(this)) >= (_mintingNFTFee), "You have not approve DFY.");
 
         // Create NFT
         uint256 mintedTokenId = dfy_physical_nfts.mint(_asset.creator, msg.sender, _evaluationId, 1, _nftCID , "");
 
         // Tranfer minting fee to admin
-        ibepDFY.transferFrom(msg.sender,addressAdmin , _mintingFee);
+        ibepDFY.transferFrom(msg.sender,addressAdmin , _mintingNFTFee);
 
         // Update status asset
         _asset.status = AssetStatus.NFT_CREATED;
