@@ -72,6 +72,7 @@ contract PawnNFTContract is
 
     function setOperator(address _newOperator) onlyRole(DEFAULT_ADMIN_ROLE) external {
         operator = _newOperator;
+        grantRole(OPERATOR_ROLE, _newOperator);
     }
 
     function setFeeWallet(address _newFeeWallet) onlyRole(DEFAULT_ADMIN_ROLE) external {
