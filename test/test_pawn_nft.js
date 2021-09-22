@@ -178,5 +178,14 @@ contract('Pawn_NFT', (accounts) => {
                 {from: lender});
         })
 
+        // Accept Offer
+        it('accept_offer' , async()=>{
+            const result = await PawnNFT_Contract.acceptOffer(
+                0,
+                0,
+                0,
+                {from: customer});
+        })
+
     })
 })
