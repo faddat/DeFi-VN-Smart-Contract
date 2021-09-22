@@ -186,7 +186,8 @@ contract DFY_Physical_NFTs is
     }
 
     function getEvaluationOfToken(uint256 _tokenId) external override returns (NFTEvaluation memory) {
-        
+        NFTEvaluation nFTEvaluation  = tokenIdOfEvaluation[_tokenId]; 
+        return nFTEvaluation;
     }
 
     function _beforeTokenTransfer(

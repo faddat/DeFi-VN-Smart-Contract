@@ -793,7 +793,7 @@ contract PawnNFTContract is
         Collateral storage _collateral = collaterals[_contract.nftCollateralId];
 
         //get Address of EvaluationContract 
-        (address _evaluationContract, ) = DFY_Physical_NFTs(_collateral.nftContract).tokenIdOfEvaluation(_collateral.nftTokenId);
+        (address _evaluationContract, ) = DFY_Physical_NFTs(_collateral.nftContract).getEvaluationOfToken(_collateral.nftTokenId);
         
           assetEvaluation = AssetEvaluation(_evaluationContract);
 
