@@ -3,6 +3,11 @@
 pragma solidity ^0.8.4;
 
 interface IDFY_Physical_NFTs {
+    
+    struct NFTEvaluation{
+        address evaluationContract;
+        uint256 evaluationId;
+    }
 
     function mint(
         address _assetOwner, 
@@ -14,4 +19,6 @@ interface IDFY_Physical_NFTs {
     ) 
         external
         returns (uint256 tokenId);
+
+    function getEvaluationOfToken(uint256 _tokenId) external returns (NFTEvaluation memory);
 }

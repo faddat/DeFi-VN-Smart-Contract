@@ -36,17 +36,17 @@ contract DFY_Physical_NFTs is
 
     // Mapping token id to information evaluation of NFT token 
     // TokenId => NFTEvaluation
-    mapping (uint256 => NFTEvaluation) public tokenIdOfEvaluation;
+    mapping (uint256 => NFTEvaluation) public tokenIdOfEvaluation; //evaluationOfToken
 
     // Mapping evaluator to NFT 
     // Address evaluator => listTokenId
     mapping (address => uint256[] ) public tokenIdListByEvaluator;
 
     // Struct NFT Evaluation
-    struct NFTEvaluation{
-        address evaluationContract;
-        uint256 evaluationId;
-    }
+    // struct NFTEvaluation{
+    //     address evaluationContract;
+    //     uint256 evaluationId;
+    // }
 
     // Name NFT token
     string public name;
@@ -183,6 +183,10 @@ contract DFY_Physical_NFTs is
         emit NFTCreated(_assetOwner, tokenId, _cid);
 
         return tokenId;
+    }
+
+    function getEvaluationOfToken(uint256 _tokenId) external override returns (NFTEvaluation memory) {
+        
     }
 
     function _beforeTokenTransfer(
