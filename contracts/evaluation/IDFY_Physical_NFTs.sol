@@ -20,5 +20,7 @@ interface IDFY_Physical_NFTs {
         external
         returns (uint256 tokenId);
 
-    function getEvaluationOfToken(uint256 _tokenId) external returns (NFTEvaluation memory);
+    function getEvaluationOfToken(uint256 _tokenId) 
+        external 
+        returns (address evaluationAddress, uint256 evaluationId);
 }

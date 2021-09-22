@@ -76,7 +76,7 @@ contract AssetEvaluation is
 
     // Mapping tokenId to evaluation
     // TokenId => evaluation
-    mapping (uint256 => Evaluation) public tokenIdByEvaluation;
+    mapping (uint256 => Evaluation) public tokenIdByEvaluation; // Should be changed to Evaluation by tokenId
 
     // Mintting NFT fee
     uint256 public _mintingNFTFee;
@@ -222,7 +222,6 @@ contract AssetEvaluation is
     * @param _cid is the CID string of the asset's JSON file stored on IFPS
     */
     function createAssetRequest(string memory _cid) external OnlyEOA {
-        // TODO: Require validation of msg.sender
         // msg.sender must not be a contract address
 
         // Require length _cid >0
@@ -255,7 +254,6 @@ contract AssetEvaluation is
     * @param _creator address representing the creator / owner of the assets.
     */
     function getAssetsByCreator(address _creator) external view returns (uint256[] memory) {
-        // TODO: Input data validation
         require(_creator != address(0), "There is no asset associated with the zero address");
 
         return assetListByCreator[_creator];

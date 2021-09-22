@@ -793,12 +793,10 @@ contract PawnNFTContract is
         Collateral storage _collateral = collaterals[_contract.nftCollateralId];
 
         //get Address of EvaluationContract 
-        (address _evaluationContract, ) = DFY_Physical_NFTs(_collateral.nftContract).getEvaluationOfToken(_collateral.nftTokenId);
-        
-          assetEvaluation = AssetEvaluation(_evaluationContract);
+        (address _evaluationContract, ) = IDFY_Physical_NFTs(_collateral.nftContract).getEvaluationOfToken(_collateral.nftTokenId);
 
         // get Evaluation from address of EvaluationContract
-        (, , , , ,uint256 price ,) = assetEvaluation.tokenIdByEvaluation(_collateral.nftTokenId);
+        (, , , , , uint256 price, ) = AssetEvaluation(_evaluationContract).tokenIdByEvaluation(_collateral.nftTokenId);
 
         (uint256 remainingRepayment, uint256 remainingLoan) = calculateRemainingLoanAndRepaymentFromContract(_contractId, _contract);
         uint256 valueOfRemainingRepayment = (_collateralPerRepaymentTokenExchangeRate * remainingRepayment) / ZOOM;

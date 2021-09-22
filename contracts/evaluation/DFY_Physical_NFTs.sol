@@ -36,7 +36,7 @@ contract DFY_Physical_NFTs is
 
     // Mapping token id to information evaluation of NFT token 
     // TokenId => NFTEvaluation
-    mapping (uint256 => NFTEvaluation) public tokenIdOfEvaluation; //evaluationOfToken
+    mapping (uint256 => NFTEvaluation) public tokenIdOfEvaluation; //evaluation Of Token
 
     // Mapping evaluator to NFT 
     // Address evaluator => listTokenId
@@ -185,9 +185,18 @@ contract DFY_Physical_NFTs is
         return tokenId;
     }
 
-    function getEvaluationOfToken(uint256 _tokenId) external override returns (NFTEvaluation memory) {
-        NFTEvaluation nFTEvaluation  = tokenIdOfEvaluation[_tokenId]; 
-        return nFTEvaluation;
+    /**
+    * @dev get evaluation id and address of given token Id
+    * @param _tokenId is the token whose evaluation data is being queried
+    */
+    function getEvaluationOfToken(uint256 _tokenId) 
+        external 
+        view
+        override
+        returns (address evaluationAddress, uint256 evaluationId) 
+    {
+        evaluationAddress   = tokenIdOfEvaluation[_tokenId].evaluationContract;
+        evaluationId        = tokenIdOfEvaluation[_tokenId].evaluationId;
     }
 
     function _beforeTokenTransfer(
