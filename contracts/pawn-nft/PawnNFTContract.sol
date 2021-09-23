@@ -14,7 +14,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "../evaluation/DFY-AccessControl.sol";
 import "../evaluation/IDFY_Physical_NFTs.sol";
-import "../evaluation/DFY_Physical_NFTs.sol";
 import "../evaluation/EvaluationContract.sol";
 import "../evaluation/IBEP20.sol";
 import "./IPawnNFT.sol";
@@ -240,7 +239,7 @@ contract PawnNFTContract is
         require(whitelistCollateral[_nftContract] == 1, "not_sp");
 
         // Check loan amount
-        require(_loanAmount > 0 && _expectedDurationQty > 0, "enougth_amount_duration");
+        require(_loanAmount > 0 && _expectedDurationQty > 0, "enough_amount_duration");
 
         // Check loan asset
         require(_loanAsset != address(0), "zero_address");
@@ -343,7 +342,7 @@ contract PawnNFTContract is
         require(_repaymentAsset != address(0), "zero_address"); // Address repayment asset must be different address(0).
 
         // Check loan amount
-        require(_loanToValue > 0 && _loanAmount > 0 && _interest > 0 && _liquidityThreshold > _loanToValue, "not_enougth"); // Loan to value must be grean that 0.
+        require(_loanToValue > 0 && _loanAmount > 0 && _interest > 0 && _liquidityThreshold > _loanToValue, "not_enough"); // Loan to value must be grean that 0.
 
         
         // Gennerate Offer Id
