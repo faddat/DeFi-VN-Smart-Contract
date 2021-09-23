@@ -12,10 +12,10 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "../evaluation/DFY-AccessControl.sol";
-import "../evaluation/IDFY_Physical_NFTs.sol";
-import "../evaluation/EvaluationContract.sol";
-import "../evaluation/IBEP20.sol";
+import "../../evaluation/DFY-AccessControl.sol";
+import "../../evaluation/IDFY_Physical_NFTs.sol";
+import "../../evaluation/EvaluationContract.sol";
+import "../../evaluation/IBEP20.sol";
 import "./IPawnNFT.sol";
 import "./PawnNFTLib.sol";
 
