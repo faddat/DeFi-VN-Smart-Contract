@@ -952,6 +952,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             // Transfer loan amount and prepaid fee to lender
             PawnLib.safeTransfer(_contract.terms.loanAsset, msg.sender, _contract.terms.lender, _paidLoanAmount + _prepaidFee);
         }
+
+        // Adjust reputation score
+        // _reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.BR_ONTIME_PAYMENT);
     }
     /** ===================================== 3.3. LIQUIDITY & DEFAULT ============================= */
     // enum ContractLiquidedReasonType { LATE, RISK, UNPAID }
@@ -1101,6 +1104,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         PawnLib.safeTransfer(_contract.terms.collateralAsset, address(this), _contract.terms.borrower, _contract.terms.collateralAmount);
 
         // Adjust reputation score
+        _reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_ONTIME_PAYMENT);
         _reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_CONTRACT_COMPLETE);
     }
 
