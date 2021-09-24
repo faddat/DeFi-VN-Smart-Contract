@@ -37,19 +37,20 @@ contract Reputation is
     // Reason for Reputation point adjustment
     /**
     * @dev Reputation points in correspondence with ReasonType 
-    * LD_CREATE_PACKAGE     : +3
-    * LD_CANCEL_PACKAGE     : -3
-    * LD_REOPEN_PACKAGE     : +3
-    * LD_GENERATE_CONTRACT  : +1
-    * LD_CREATE_OFFER       : +2
-    * LD_CANCEL_OFFER       : -2
-    * BR_CREATE_COLLATERAL  : +3
-    * BR_CANCEL_COLLATERAL  : -3
-    * BR_ONTIME_PAYMENT     : +1
-    * BR_LATE_PAYMENT       : -1
-    * BR_ACCEPT_OFFER       : +1
-    * BR_CONTRACT_COMPLETE  : +5
-    * BR_CONTRACT_DEFAULTED : -5
+    * LD_CREATE_PACKAGE     : +3    (0)
+    * LD_CANCEL_PACKAGE     : -3    (1)
+    * LD_REOPEN_PACKAGE     : +3    (2)
+    * LD_GENERATE_CONTRACT  : +1    (3)
+    * LD_CREATE_OFFER       : +2    (4)
+    * LD_CANCEL_OFFER       : -2    (5)
+    * LD_ACCEPT_OFFER       : +1    (6)
+    * BR_CREATE_COLLATERAL  : +3    (7)
+    * BR_CANCEL_COLLATERAL  : -3    (8)
+    * BR_ONTIME_PAYMENT     : +1    (9)
+    * BR_LATE_PAYMENT       : -1    (10)
+    * BR_ACCEPT_OFFER       : +1    (11)
+    * BR_CONTRACT_COMPLETE  : +5    (12)
+    * BR_CONTRACT_DEFAULTED : -5    (13)
     */
 
     mapping(ReasonType => int8) _rewardByReason; 
@@ -68,25 +69,30 @@ contract Reputation is
     }
 
     function _initializeRewardByReason() internal virtual {
-        _rewardByReason[ReasonType.LD_CREATE_PACKAGE]    =  3;
-        _rewardByReason[ReasonType.LD_CANCEL_PACKAGE]    = -3;
-        _rewardByReason[ReasonType.LD_REOPEN_PACKAGE]    =  3;
-        _rewardByReason[ReasonType.LD_GENERATE_CONTRACT] =  1;
-        _rewardByReason[ReasonType.LD_CREATE_OFFER]      =  2;
-        _rewardByReason[ReasonType.LD_CANCEL_OFFER]      = -2;
-        _rewardByReason[ReasonType.BR_CREATE_COLLATERAL] =  3;
-        _rewardByReason[ReasonType.BR_CANCEL_COLLATERAL] = -3;
-        _rewardByReason[ReasonType.BR_ONTIME_PAYMENT]    =  1;
-        _rewardByReason[ReasonType.BR_LATE_PAYMENT]      = -1;
-        _rewardByReason[ReasonType.BR_ACCEPT_OFFER]      =  1;
-        _rewardByReason[ReasonType.BR_CONTRACT_COMPLETE] =  5;
-        _rewardByReason[ReasonType.BR_CONTRACT_DEFAULTED]= -5;
+        _rewardByReason[ReasonType.LD_CREATE_PACKAGE]    =  3;  // index: 0
+        _rewardByReason[ReasonType.LD_CANCEL_PACKAGE]    = -3;  // index: 1
+        _rewardByReason[ReasonType.LD_REOPEN_PACKAGE]    =  3;  // index: 2
+        _rewardByReason[ReasonType.LD_GENERATE_CONTRACT] =  1;  // index: 3
+        _rewardByReason[ReasonType.LD_CREATE_OFFER]      =  2;  // index: 4
+        _rewardByReason[ReasonType.LD_CANCEL_OFFER]      = -2;  // index: 5
+        _rewardByReason[ReasonType.LD_ACCEPT_OFFER]      =  1;  // index: 6
+        _rewardByReason[ReasonType.BR_CREATE_COLLATERAL] =  3;  // index: 7
+        _rewardByReason[ReasonType.BR_CANCEL_COLLATERAL] = -3;  // index: 8
+        _rewardByReason[ReasonType.BR_ONTIME_PAYMENT]    =  1;  // index: 9
+        _rewardByReason[ReasonType.BR_LATE_PAYMENT]      = -1;  // index: 10
+        _rewardByReason[ReasonType.BR_ACCEPT_OFFER]      =  1;  // index: 11
+        _rewardByReason[ReasonType.BR_CONTRACT_COMPLETE] =  5;  // index: 12
+        _rewardByReason[ReasonType.BR_CONTRACT_DEFAULTED]= -5;  // index: 13
+    }
+
+    function initializeRewardByReason() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _initializeRewardByReason();
     }
 
     function _authorizeUpgrade(address) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 
     function version() public virtual pure returns (string memory) {
-        return "1.0";
+        return "1.0.1";
     }
 
     modifier isNotZeroAddress(address _to) {
