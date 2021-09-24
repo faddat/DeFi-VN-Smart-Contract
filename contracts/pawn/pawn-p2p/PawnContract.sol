@@ -658,7 +658,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
         // Adjust reputation score
         _reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.BR_ACCEPT_OFFER);
-        _reputation.adjustReputationScore(offer.owner, IReputation.ReasonType.BR_ACCEPT_OFFER);
+        _reputation.adjustReputationScore(offer.owner, IReputation.ReasonType.LD_ACCEPT_OFFER);
     }
 
     /** ================================ 2. ACCEPT COLLATERAL (FOR PAWNSHOP PACKAGE WORKFLOWS) ============================= */
@@ -1076,6 +1076,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         PawnLib.safeTransfer(_contract.terms.collateralAsset, address(this), feeWallet, _systemFeeAmount);
 
         // Adjust reputation score
+        _reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_LATE_PAYMENT);
         _reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_CONTRACT_DEFAULTED);
 
     }
@@ -1101,6 +1102,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         PawnLib.safeTransfer(_contract.terms.collateralAsset, address(this), _contract.terms.borrower, _contract.terms.collateralAmount);
 
         // Adjust reputation score
+        _reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_ONTIME_PAYMENT);
         _reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_CONTRACT_COMPLETE);
     }
 
