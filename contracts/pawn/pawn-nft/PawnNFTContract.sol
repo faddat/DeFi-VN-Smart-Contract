@@ -484,6 +484,9 @@ contract PawnNFTContract is
         internal 
         returns (uint256 _idx) 
     {
+        // Get Offer                                                                                                                                                                                                                             
+        CollateralOfferList storage collateralOfferList = collateralOffersMapping[_nftCollateralId];
+        Offer storage _offer = collateralOfferList.offerMapping[_offerId];
         
         _idx = numberContracts;
         Contract storage newContract = contracts[_idx];
@@ -503,7 +506,7 @@ contract PawnNFTContract is
         newContract.terms.interest = _interest;
         newContract.terms.liquidityThreshold = _liquidityThreshold;
         newContract.terms.contractStartDate = block.timestamp;
-        newContract.terms.contractEndDate = block.timestamp + PawnNFTLib.calculateContractDuration(_collateral.durationType, _collateral.expectedDurationQty);
+        newContract.terms.contractEndDate = block.timestamp + PawnNFTLib.calculateContractDuration(_offer.loanDurationType, _offer.duration);
         newContract.terms.lateThreshold = lateThreshold;
         newContract.terms.systemFeeRate = systemFeeRate;
         newContract.terms.penaltyRate = penaltyRate;
