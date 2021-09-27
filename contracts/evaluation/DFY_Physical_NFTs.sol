@@ -222,4 +222,16 @@ contract DFY_Physical_NFTs is
         return super.supportsInterface(interfaceId);
     }
 
+    function updateCID (uint256 _tokenId, string memory _newCID) external onlyRole(DEFAULT_ADMIN_ROLE){
+        // Check address different address(0)
+        require(bytes(_newCID).length > 0, "Not empty CID");
+
+        // Check token
+        require(bytes(tokenIdListToCID[_tokenId]).length > 0, "NFT is not exists.");
+
+        // Update CID
+        tokenIdListToCID[_tokenId] = _newCID;
+
+    }
+
 }
