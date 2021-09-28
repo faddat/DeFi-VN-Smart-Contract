@@ -32,8 +32,6 @@ contract Reputation is
     // mapping of user address's reputation score
     mapping (address => uint32) private _reputationScore;
 
-    address _contractCaller;
-
     mapping(ReasonType => int8) _rewardByReason;
 
     mapping(address => bool) whitelistedContractCaller;
@@ -118,12 +116,6 @@ contract Reputation is
         _;
     }
 
-    // TODO: Will be removed later
-    modifier onlyContractCaller() {
-        require(_contractCaller == _msgSender(), "DFY: Calling Reputation adjustment from a non-contract address");
-        _;
-    }
-
     modifier onlyWhitelistedContractCaller(address _from) {
         // Caller must be a contract
         require(_from.isContract(), "DFY: Calling Reputation adjustment from a non-contract address");
@@ -131,28 +123,6 @@ contract Reputation is
         // Caller must be whitelisted
         require(whitelistedContractCaller[_from] == true, "DFY: Caller is not allowed");
         _;
-    }
-
-    /**
-    * @dev Get the address of the host contract
-    * TODO: Will be removed later
-    */
-    function getContractCaller() external virtual view returns (address) {
-        return _contractCaller;
-    }
-    
-    /**
-    * @dev Set the host contract address that only allowed to call functions from this contract
-    * TODO: Will be removed later
-    */
-    function setContractCaller(address _caller) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setContractCaller(_caller);
-    }
-
-    // TODO: Will be removed later
-    function _setContractCaller(address _caller) internal {
-        require(_caller.isContract(), "DFY: Setting reputation contract caller to a non-contract address");
-        _contractCaller = _caller;
     }
 
     /** 

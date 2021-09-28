@@ -180,7 +180,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         PawnLib.safeTransfer(_collateralAddress, msg.sender, address(this), _amount);
 
         // Adjust reputation score
-        _reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.BR_CREATE_COLLATERAL);
+        reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.BR_CREATE_COLLATERAL);
     }
 
     /**
@@ -211,7 +211,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit WithdrawCollateralEvent(_collateralId, msg.sender);
 
         // Adjust reputation score
-        _reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.BR_CANCEL_COLLATERAL);
+        reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.BR_CANCEL_COLLATERAL);
     }
 
     /** ========================= OFFER FUNCTIONS & STATES ============================= */
@@ -289,7 +289,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit CreateOfferEvent(_idx, _collateralId, _offer);
         
         // Adjust reputation score
-        _reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.LD_CREATE_OFFER);
+        reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.LD_CREATE_OFFER);
     }
 
     /**
@@ -319,7 +319,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit CancelOfferEvent(_offerId, _collateralId, msg.sender);
         
         // Adjust reputation score
-        _reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.LD_CANCEL_OFFER);
+        reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.LD_CANCEL_OFFER);
     }
 
     /** ========================= PAWNSHOP PACKAGE FUNCTIONS & STATES ============================= */
@@ -387,7 +387,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         );
         
         // Adjust reputation score
-        _reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.LD_CREATE_PACKAGE);
+        reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.LD_CREATE_PACKAGE);
     }
 
     function activePawnShopPackage(uint256 _packageId)
@@ -401,7 +401,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit ChangeStatusPawnShopPackage(_packageId, PawnShopPackageStatus.ACTIVE);
         
         // Adjust reputation score
-        _reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.LD_REOPEN_PACKAGE);
+        reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.LD_REOPEN_PACKAGE);
     }
 
     function deactivePawnShopPackage(uint256 _packageId)
@@ -415,7 +415,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         emit ChangeStatusPawnShopPackage(_packageId, PawnShopPackageStatus.INACTIVE);
         
         // Adjust reputation score
-        _reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.LD_CANCEL_PACKAGE);
+        reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.LD_CANCEL_PACKAGE);
     }
 
     /** ========================= SUBMIT & ACCEPT WORKFLOW OF PAWNSHOP PACKAGE FUNCTIONS & STATES ============================= */
@@ -658,8 +658,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         PawnLib.safeTransfer(newContract.terms.loanAsset, newContract.terms.lender, newContract.terms.borrower, newContract.terms.loanAmount);
 
         // Adjust reputation score
-        _reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.BR_ACCEPT_OFFER);
-        _reputation.adjustReputationScore(offer.owner, IReputation.ReasonType.LD_ACCEPT_OFFER);
+        reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.BR_ACCEPT_OFFER);
+        reputation.adjustReputationScore(offer.owner, IReputation.ReasonType.LD_ACCEPT_OFFER);
     }
 
     /** ================================ 2. ACCEPT COLLATERAL (FOR PAWNSHOP PACKAGE WORKFLOWS) ============================= */
@@ -709,7 +709,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         PawnLib.safeTransfer(newContract.terms.loanAsset, newContract.terms.lender, newContract.terms.borrower, newContract.terms.loanAmount);
         
         // Adjust reputation score
-        _reputation.adjustReputationScore(pawnShopPackage.owner, IReputation.ReasonType.LD_GENERATE_CONTRACT);
+        reputation.adjustReputationScore(pawnShopPackage.owner, IReputation.ReasonType.LD_GENERATE_CONTRACT);
     }
 
     function createContract (
@@ -797,7 +797,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
                 previousRequest.status = PaymentRequestStatusEnum.LATE;
 
                 // Adjust reputation score
-                _reputation.adjustReputationScore(currentContract.terms.borrower, IReputation.ReasonType.BR_LATE_PAYMENT);
+                reputation.adjustReputationScore(currentContract.terms.borrower, IReputation.ReasonType.BR_LATE_PAYMENT);
 
                 // Update late counter of contract
                 currentContract.lateCount += 1;
@@ -812,7 +812,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
                 previousRequest.status = PaymentRequestStatusEnum.COMPLETE;
 
                 // Adjust reputation score
-                _reputation.adjustReputationScore(currentContract.terms.borrower, IReputation.ReasonType.BR_ONTIME_PAYMENT);
+                reputation.adjustReputationScore(currentContract.terms.borrower, IReputation.ReasonType.BR_ONTIME_PAYMENT);
             }
 
             // Check for last repayment, if last repayment, all paid
@@ -1079,8 +1079,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         PawnLib.safeTransfer(_contract.terms.collateralAsset, address(this), feeWallet, _systemFeeAmount);
 
         // Adjust reputation score
-        _reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_LATE_PAYMENT);
-        _reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_CONTRACT_DEFAULTED);
+        reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_LATE_PAYMENT);
+        reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_CONTRACT_DEFAULTED);
 
     }
 
@@ -1105,8 +1105,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         PawnLib.safeTransfer(_contract.terms.collateralAsset, address(this), _contract.terms.borrower, _contract.terms.collateralAmount);
 
         // Adjust reputation score
-        _reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_ONTIME_PAYMENT);
-        _reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_CONTRACT_COMPLETE);
+        reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_ONTIME_PAYMENT);
+        reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_CONTRACT_COMPLETE);
     }
 
     function findContractOfCollateral(
@@ -1165,9 +1165,9 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
 
     /** ===================================== REPUTATION FUNCTIONS & STATES ===================================== */
 
-    IReputation public _reputation;
+    IReputation public reputation;
     
     function setReputationContract(address _reputationAddress) external onlyAdmin {
-        _reputation = IReputation(_reputationAddress);
+        reputation = IReputation(_reputationAddress);
     }
 }
