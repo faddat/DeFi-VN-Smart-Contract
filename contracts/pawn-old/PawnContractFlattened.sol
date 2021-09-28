@@ -29,6 +29,8 @@ abstract contract Context {
 
 // File @openzeppelin/contracts/access/Ownable.sol@v4.2.0
 
+
+
 pragma solidity ^0.8.0;
 
 /**
@@ -99,6 +101,8 @@ abstract contract Ownable is Context {
 
 
 // File @openzeppelin/contracts/security/Pausable.sol@v4.2.0
+
+
 
 pragma solidity ^0.8.0;
 
@@ -190,6 +194,8 @@ abstract contract Pausable is Context {
 
 // File @openzeppelin/contracts/security/ReentrancyGuard.sol@v4.2.0
 
+
+
 pragma solidity ^0.8.0;
 
 /**
@@ -253,6 +259,8 @@ abstract contract ReentrancyGuard {
 
 
 // File @openzeppelin/contracts/token/ERC20/IERC20.sol@v4.2.0
+
+
 
 pragma solidity ^0.8.0;
 
@@ -336,6 +344,8 @@ interface IERC20 {
 
 
 // File @openzeppelin/contracts/utils/Address.sol@v4.2.0
+
+
 
 pragma solidity ^0.8.0;
 
@@ -549,6 +559,8 @@ library Address {
 
 // File @openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol@v4.2.0
 
+
+
 pragma solidity ^0.8.0;
 
 
@@ -647,9 +659,30 @@ library SafeERC20 {
 
 // File contracts/reputation/IReputation.sol
 
-pragma solidity ^0.8.0;
+
+
+pragma solidity ^0.8.4;
 
 interface IReputation {
+    
+    // Reason for Reputation point adjustment
+    /**
+    * @dev Reputation points in correspondence with ReasonType 
+    * LD_CREATE_PACKAGE     : +3
+    * LD_CANCEL_PACKAGE     : -3
+    * LD_REOPEN_PACKAGE     : +3
+    * LD_GENERATE_CONTRACT  : +1
+    * LD_CREATE_OFFER       : +2
+    * LD_CANCEL_OFFER       : -2
+    * BR_CREATE_COLLATERAL  : +3
+    * BR_CANCEL_COLLATERAL  : -3
+    * BR_ONTIME_PAYMENT     : +1
+    * BR_LATE_PAYMENT       : -1
+    * BR_ACCEPT_OFFER       : +1
+    * BR_CONTRACT_COMPLETE  : +5
+    * BR_CONTRACT_DEFAULTED : -5
+    */
+    
     enum ReasonType {
         LD_CREATE_PACKAGE, 
         LD_CANCEL_PACKAGE,
@@ -682,7 +715,9 @@ interface IReputation {
 }
 
 
-// File contracts/pawn/PawnContract.sol
+// File contracts/pawn-old/PawnContract.sol
+
+
 
 pragma solidity ^0.8.4;
 
