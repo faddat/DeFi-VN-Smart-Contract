@@ -630,7 +630,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             offer.repaymentAsset, 
             offer.interest, 
             offer.loanDurationType, 
-            offer.liquidityThreshold
+            offer.liquidityThreshold,
+            offer.duration
         );
         Contract storage newContract = contracts[contractId];
         
@@ -694,7 +695,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
             pawnShopPackage.repaymentAsset, 
             pawnShopPackage.interest, 
             pawnShopPackage.repaymentCycleType, 
-            pawnShopPackage.loanToValueLiquidationThreshold
+            pawnShopPackage.loanToValueLiquidationThreshold,
+            collateral.expectedDurationQty
         );
         Contract storage newContract = contracts[contractId];
         emit LoanContractCreatedEvent(msg.sender, contractId, newContract);
@@ -720,7 +722,8 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         address _repaymentAsset,
         uint256 _interest,
         LoanDurationType _repaymentCycleType,
-        uint256 _liquidityThreshold
+        uint256 _liquidityThreshold,
+        uint256 _loanDurationQty
     )
     internal
     returns (uint256 _idx)
@@ -743,7 +746,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         newContract.terms.interest = _interest;
         newContract.terms.liquidityThreshold = _liquidityThreshold;
         newContract.terms.contractStartDate = block.timestamp;
-        newContract.terms.contractEndDate = block.timestamp + PawnLib.calculateContractDuration(_collateral.expectedDurationType, _collateral.expectedDurationQty);
+        newContract.terms.contractEndDate = block.timestamp + PawnLib.calculateContractDuration(_repaymentCycleType, _loanDurationQty);
         newContract.terms.lateThreshold = lateThreshold;
         newContract.terms.systemFeeRate = systemFeeRate;
         newContract.terms.penaltyRate = penaltyRate;
@@ -1038,7 +1041,7 @@ contract PawnContract is Ownable, Pausable, ReentrancyGuard {
         require(remainingRepayment + remainingLoan > 0, '1'); // paid
         
         // Execute: call internal liquidation
-        _liquidationExecution(_contractId, ContractLiquidedReasonType.LATE);
+        _liquidationExecution(_contractId, ContractLiquidedReasonType.UNPAID);
     }
 
     function _liquidationExecution(
