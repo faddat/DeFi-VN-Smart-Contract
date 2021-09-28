@@ -470,7 +470,7 @@ contract PawnNFTContract is
     
         // Adjust reputation score
         _reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.BR_ACCEPT_OFFER);
-        _reputation.adjustReputationScore(offer.owner, IReputation.ReasonType.BR_ACCEPT_OFFER);
+        _reputation.adjustReputationScore(offer.owner, IReputation.ReasonType.LD_ACCEPT_OFFER);
     }
 
     /**
@@ -878,7 +878,7 @@ contract PawnNFTContract is
         require(remainingRepayment + remainingLoan > 0, '1');
         
         // Execute: call internal liquidation
-        _liquidationExecution(_contractId, ContractLiquidedReasonType.LATE);
+        _liquidationExecution(_contractId, ContractLiquidedReasonType.UNPAID);
     }
 
     function calculateRemainingLoanAndRepaymentFromContract(

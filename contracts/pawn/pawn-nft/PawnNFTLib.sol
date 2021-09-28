@@ -76,13 +76,17 @@ library PawnNFTLib {
     * @param  durationType is loan duration type of contract (WEEK/MONTH)
     * @param  duration is duration of contract
     */
-    function calculateContractDuration(IPawnNFT.LoanDurationType durationType, uint256 duration) internal pure returns (uint256 inSeconds) {
+    function calculateContractDuration(IPawnNFT.LoanDurationType durationType, uint256 duration) 
+        internal 
+        pure 
+        returns (uint256 inSeconds) 
+    {
         if (durationType == IPawnNFT.LoanDurationType.WEEK) {
-            inSeconds = 7 * 24 * 3600 * duration;
-            // inSeconds = duration * 600; => Using test
+            // inSeconds = 7 * 24 * 3600 * duration;
+            inSeconds = duration * 600; //=> Using test
         } else {
-            inSeconds = 30 * 24 * 3600 * duration;
-            // inSeconds = duration * 900; => Using test
+            // inSeconds = 30 * 24 * 3600 * duration;
+            inSeconds = duration * 900; //=> Using test
         }
     }
 
@@ -116,29 +120,4 @@ library PawnNFTLib {
     ) internal pure returns (uint256 feeAmount) {
         feeAmount = (amount * feeRate) / (zoom * 100);
     }
-
-    // function calculateRemainingLoanAndRepaymentFromContract(
-    //     IPawnNFT.Contract storage _contract,
-    //     IPawnNFT.PaymentRequest[] storage _paymentRequests
-    // ) 
-    //     internal 
-    //     view 
-    //     returns (
-    //         uint256 remainingRepayment, 
-    //         uint256 remainingLoan
-    //     )
-    // {
-    //     // Validate: sum of unpaid interest, penalty and remaining loan in value must reach liquidation threshold of collateral value
-    //     IPawnNFT.PaymentRequest[] storage requests = _paymentRequests;
-    //     if (requests.length > 0) {
-    //         // Have payment request
-    //         IPawnNFT.PaymentRequest storage _paymentRequest = requests[requests.length - 1];
-    //         remainingRepayment = _paymentRequest.remainingInterest + _paymentRequest.remainingPenalty;
-    //         remainingLoan = _paymentRequest.remainingLoan;
-    //     } else {
-    //         // Haven't had payment request
-    //         remainingRepayment = 0;
-    //         remainingLoan = _contract.terms.loanAmount;
-    //     }
-    // }
 }
