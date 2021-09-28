@@ -12,12 +12,13 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "./IPawnNFT.sol";
+import "./PawnNFTLib.sol";
 import "../../evaluation/DFY-AccessControl.sol";
 import "../../evaluation/IDFY_Physical_NFTs.sol";
 import "../../evaluation/EvaluationContract.sol";
 import "../../evaluation/IBEP20.sol";
-import "./IPawnNFT.sol";
-import "./PawnNFTLib.sol";
+import "../../reputation/IReputation.sol";
 
 contract PawnNFTContract is 
     IPawnNFT, 
@@ -37,14 +38,12 @@ contract PawnNFTContract is
     AssetEvaluation assetEvaluation;
 
     mapping (address => uint256) public whitelistCollateral;
-    address public operator;
     address public feeWallet;
     uint256 public penaltyRate;
     uint256 public systemFeeRate;
     uint256 public lateThreshold;
     uint256 public prepaidFeeRate;
     uint256 public ZOOM;
-    address public admin;
 
     // DFY_Physical_NFTs dfy_physical_nfts;
     // AssetEvaluation assetEvaluation;
@@ -56,7 +55,6 @@ contract PawnNFTContract is
         __UUPSUpgradeable_init();
 
         ZOOM = _zoom;
-        admin = address(msg.sender);
     }
 
     function _authorizeUpgrade(address) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
@@ -70,7 +68,7 @@ contract PawnNFTContract is
     }
 
     function setOperator(address _newOperator) onlyRole(DEFAULT_ADMIN_ROLE) external {
-        operator = _newOperator;
+        // operator = _newOperator;
         grantRole(OPERATOR_ROLE, _newOperator);
     }
 
@@ -123,7 +121,7 @@ contract PawnNFTContract is
         whenPaused 
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        PawnNFTLib.safeTransfer(_token, address(this), admin, PawnNFTLib.calculateAmount(_token, address(this)));
+        PawnNFTLib.safeTransfer(_token, address(this), msg.sender, PawnNFTLib.calculateAmount(_token, address(this)));
     }
 
     /** ========================= EVENT ============================= */
@@ -267,7 +265,9 @@ contract PawnNFTContract is
         numberCollaterals.increment();
 
         emit CollateralEvent(collateralId, collaterals[collateralId],_UID);
-
+        
+         // Adjust reputation score
+        reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.BR_CREATE_COLLATERAL);
     }
 
     function withdrawCollateral(
@@ -301,6 +301,10 @@ contract PawnNFTContract is
 
 
         delete collaterals[_nftCollateralId];
+
+        // Adjust reputation score
+        reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.BR_CANCEL_COLLATERAL);
+    
 
     }
 
@@ -375,6 +379,9 @@ contract PawnNFTContract is
         numberOffers.increment();
 
         emit OfferEvent(offerId, _nftCollateralId, _collateralOfferList.offerMapping[offerId], _UID);
+
+        // Adjust reputation score
+        reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.LD_CREATE_OFFER);
     }
 
     function cancelOffer(uint256 _offerId, uint256 _nftCollateralId, uint256 _UID) external override whenNotPaused {
@@ -402,6 +409,8 @@ contract PawnNFTContract is
         delete _collateralOfferList.offerIdList[_collateralOfferList.offerIdList.length - 1];
         emit CancelOfferEvent(_offerId, _nftCollateralId, msg.sender,_UID);
         
+        // Adjust reputation score
+        reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.LD_CANCEL_OFFER);
     }
 
     /** ================================ ACCEPT OFFER ============================= */
@@ -455,7 +464,10 @@ contract PawnNFTContract is
 
         // Transfer loan asset to collateral owner
         PawnNFTLib.safeTransfer(newContract.terms.loanAsset, newContract.terms.lender, newContract.terms.borrower, newContract.terms.loanAmount);
- 
+    
+        // Adjust reputation score
+        reputation.adjustReputationScore(msg.sender, IReputation.ReasonType.BR_ACCEPT_OFFER);
+        reputation.adjustReputationScore(offer.owner, IReputation.ReasonType.LD_ACCEPT_OFFER);
     }
 
     /**
@@ -564,6 +576,10 @@ contract PawnNFTContract is
                 // Update late counter of contract
                 currentContract.lateCount += 1;
 
+                // Adjust reputation score
+                reputation.adjustReputationScore(currentContract.terms.borrower, IReputation.ReasonType.BR_LATE_PAYMENT);
+
+
                 // Check for late threshold reach
                 if (currentContract.terms.lateThreshold <= currentContract.lateCount) {
                     // Execute liquid
@@ -573,6 +589,9 @@ contract PawnNFTContract is
             } else {
                 previousRequest.status = PaymentRequestStatusEnum.COMPLETE;
 
+                // Adjust reputation score
+                reputation.adjustReputationScore(currentContract.terms.borrower, IReputation.ReasonType.BR_ONTIME_PAYMENT);
+            
             }
 
             // Check for last repayment, if last repayment, all paid
@@ -662,7 +681,10 @@ contract PawnNFTContract is
         );
         // Transfer to lender collateral
         PawnNFTLib.safeTranferNFTToken(_contract.terms.nftCollateralAsset, address(this), _contract.terms.lender,_contract.terms.nftTokenId, _contract.terms.nftCollateralAmount );
-    
+
+        // Adjust reputation score
+        reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_LATE_PAYMENT);
+        reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_CONTRACT_DEFAULTED);
     }
 
     /**
@@ -689,6 +711,9 @@ contract PawnNFTContract is
         // Execute: Transfer collateral to borrower
         PawnNFTLib.safeTranferNFTToken(_contract.terms.nftCollateralAsset,  address(this), _contract.terms.borrower, _contract.terms.nftTokenId,  _contract.terms.nftCollateralAmount );
 
+        // Adjust reputation score
+        reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_ONTIME_PAYMENT);
+        reputation.adjustReputationScore(_contract.terms.borrower, IReputation.ReasonType.BR_CONTRACT_COMPLETE);
     }
 
     /**
@@ -850,7 +875,7 @@ contract PawnNFTContract is
         require(remainingRepayment + remainingLoan > 0, '1');
         
         // Execute: call internal liquidation
-        _liquidationExecution(_contractId, ContractLiquidedReasonType.LATE);
+        _liquidationExecution(_contractId, ContractLiquidedReasonType.UNPAID);
     }
 
     function calculateRemainingLoanAndRepaymentFromContract(
@@ -878,4 +903,11 @@ contract PawnNFTContract is
         }
     }
 
+    /** ===================================== REPUTATION FUNCTIONS & STATES ===================================== */
+
+    IReputation public reputation;
+    
+    function setReputationContract(address _reputationAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        reputation = IReputation(_reputationAddress);
+    }
 }
