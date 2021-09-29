@@ -223,15 +223,13 @@ contract DFY_Physical_NFTs is
     }
 
     function updateCID (uint256 _tokenId, string memory _newCID) external onlyRole(DEFAULT_ADMIN_ROLE){
-        // Check address different address(0)
-        require(bytes(_newCID).length > 0, "Not empty CID");
+        // Check for empty CID string input
+        require(bytes(_newCID).length > 0, "Empty CID");
 
-        // Check token
-        require(bytes(tokenIdListToCID[_tokenId]).length > 0, "NFT is not exists.");
+        // Check if token exists
+        require(bytes(tokenIdListToCID[_tokenId]).length > 0, "Token doesn't exist");
 
         // Update CID
         tokenIdListToCID[_tokenId] = _newCID;
-
     }
-
 }
