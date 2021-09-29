@@ -200,6 +200,13 @@ contract AssetEvaluation is
         ibepDFY = IBEP20(_newAddress);
     }
 
+    function setFeeWallet(address _feeWallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setAddressAdmin(_feeWallet);
+    }
+
+    function feeWallet() external view returns (address) {
+        return addressAdmin;
+    }
     
     function _setAddressAdmin(address _newAddress) internal {
         addressAdmin = _newAddress;
