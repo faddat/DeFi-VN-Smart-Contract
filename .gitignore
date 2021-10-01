@@ -9,6 +9,9 @@
 *.user
 *.userosscache
 *.sln.docstates
+.history
+package-lock.json
+.vscode
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -350,3 +353,14 @@ MigrationBackup/
 .ionide/
 
 .idea
+PawnContractWithReputation_Flattened.sol
+PawnMockContract.sol
+Reputation_Flattened.sol
+contracts/pawn/artifacts
+contracts/pawn/PawnContractFlattened.sol
+contracts/reputation/artifacts
+contracts/reputation/Reputation_Flattened.sol
+contracts/ERC20Base/
+
+#.Env file
+.env
