@@ -82,11 +82,9 @@ library PawnNFTLib {
         returns (uint256 inSeconds) 
     {
         if (durationType == IPawnNFT.LoanDurationType.WEEK) {
-            // inSeconds = 7 * 24 * 3600 * duration;
-            inSeconds = duration * 600; //=> Using test
+            inSeconds = 7 * 24 * 3600 * duration;
         } else {
-            // inSeconds = 30 * 24 * 3600 * duration;
-            inSeconds = duration * 900; //=> Using test
+            inSeconds = 30 * 24 * 3600 * duration;
         }
     }
 

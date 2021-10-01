@@ -14,11 +14,11 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./IPawnNFT.sol";
 import "./PawnNFTLib.sol";
-import "../../evaluation/DFY-AccessControl.sol";
-import "../../evaluation/IDFY_Physical_NFTs.sol";
-import "../../evaluation/EvaluationContract.sol";
-import "../../evaluation/IBEP20.sol";
-import "../../reputation/IReputation.sol";
+import "../access/DFY-AccessControl.sol";
+import "../nft/IDFY_Physical_NFTs.sol";
+import "../evaluation/EvaluationContract.sol";
+import "../evaluation/IBEP20.sol";
+import "../reputation/IReputation.sol";
 
 contract PawnNFTContract is 
     IPawnNFT, 

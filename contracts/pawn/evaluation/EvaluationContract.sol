@@ -10,8 +10,8 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "./DFY-AccessControl.sol";
-import "./IDFY_Physical_NFTs.sol";
+import "../access/DFY-AccessControl.sol";
+import "../nft/IDFY_Physical_NFTs.sol";
 import "./IBEP20.sol";
 
 
@@ -288,8 +288,10 @@ contract AssetEvaluation is
         // Check evaluation CID
         require(bytes(_evaluationCID).length >0, "Evaluation CID not be empty.");
 
-        // Require address currency is contract
-        require(_currency.isContract(), "Address token is not defined.");
+        // Require address currency is contract except BNB - 0x0000000000000000000000000000000000000000
+        if(_currency != address(0)) {
+            require(_currency.isContract(), "Address token is not defined.");
+        }
 
         // Require validation is creator asset
         require(!_isAssetOfCreator(msg.sender, _assetId), "You cant evaluted your asset.");

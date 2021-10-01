@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./PawnLib.sol";
-import "../../reputation/IReputation.sol";
+import "../reputation/IReputation.sol";
 
 contract PawnContract is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;

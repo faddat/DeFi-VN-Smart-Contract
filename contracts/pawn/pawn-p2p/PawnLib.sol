@@ -172,9 +172,9 @@ library PawnLib {
     returns (uint256 inSeconds)
     {
         if (durationType == LoanDurationType.WEEK) {
-            inSeconds = 600 * duration;
+            inSeconds = 7 * 24 * 3600 * duration;
         } else {
-            inSeconds = 900 * duration;
+            inSeconds = 30 * 24 * 3600 * duration;
         }
     }
 }
